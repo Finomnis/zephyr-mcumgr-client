@@ -4,6 +4,7 @@ use std::{
 };
 
 use deku::prelude::*;
+use miette::{Diagnostic, IntoDiagnostic};
 use thiserror::Error;
 
 #[derive(Debug, PartialEq, DekuRead, DekuWrite)]
@@ -23,28 +24,36 @@ struct SmpHeader {
 }
 
 const SMP_HEADER_SIZE: usize = 8;
-const SMP_TRANSFER_BUFFER_SIZE: usize = u16::MAX as usize;
+pub const SMP_TRANSFER_BUFFER_SIZE: usize = u16::MAX as usize;
 
-mod SmpOp {
+mod smp_op {
     pub const READ: u8 = 0;
     pub const READ_RSP: u8 = 1;
     pub const WRITE: u8 = 2;
     pub const WRITE_RSP: u8 = 3;
 }
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Diagnostic)]
 pub enum SendError {
-    #[error("given data slice was too big")]
-    DataTooBig,
     #[error("transport error")]
-    Disconnect(#[from] io::Error),
+    #[diagnostic(code(zephyr_mcumgr::transport::send::transport))]
+    TransportError(#[from] io::Error),
+    #[error("given data slice was too big")]
+    #[diagnostic(code(zephyr_mcumgr::transport::send::too_big))]
+    DataTooBig,
+}
+
+#[derive(Error, Debug, Diagnostic)]
+pub enum ReceiveError {
+    #[error("transport error")]
+    #[diagnostic(code(zephyr_mcumgr::transport::recv::transport))]
+    TransportError(#[from] io::Error),
     #[error("received unexpected response")]
+    #[diagnostic(code(zephyr_mcumgr::transport::recv::unexpected))]
     UnexpectedResponse,
 }
 
 pub trait Transport: Send + Read + Write {
-    fn set_timeout(&mut self, timeout: Duration);
-
     fn send_frame(
         &mut self,
         write_operation: bool,
@@ -57,9 +66,9 @@ pub trait Transport: Send + Read + Write {
             res: 0,
             ver: 0b01,
             op: if write_operation {
-                SmpOp::WRITE
+                smp_op::WRITE
             } else {
-                SmpOp::READ
+                smp_op::READ
             },
             flags: 0,
             data_length: data.len().try_into().map_err(|_| SendError::DataTooBig)?,
@@ -84,7 +93,7 @@ pub trait Transport: Send + Read + Write {
         sequence_num: u8,
         group_id: u16,
         command_id: u8,
-    ) -> Result<&'a [u8], SendError> {
+    ) -> Result<&'a [u8], ReceiveError> {
         let mut header_data = [0u8; SMP_HEADER_SIZE];
 
         let data_size = loop {
@@ -95,9 +104,9 @@ pub trait Transport: Send + Read + Write {
             self.read_exact(data)?;
 
             let expected_op = if write_operation {
-                SmpOp::WRITE_RSP
+                smp_op::WRITE_RSP
             } else {
-                SmpOp::READ_RSP
+                smp_op::READ_RSP
             };
 
             // Receiving packets with the wrong sequence number is not an error,
@@ -110,12 +119,14 @@ pub trait Transport: Send + Read + Write {
                 || (header.command_id != command_id)
                 || (header.op != expected_op)
             {
-                return Err(SendError::UnexpectedResponse);
+                return Err(ReceiveError::UnexpectedResponse);
             }
 
             break header.data_length.into();
         };
 
-        return Ok(&buffer[..data_size]);
+        Ok(&buffer[..data_size])
     }
 }
+
+impl<T> Transport for T where T: Send + Read + Write {}

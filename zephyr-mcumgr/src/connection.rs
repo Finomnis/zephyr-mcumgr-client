@@ -1,17 +1,15 @@
 use crate::transport::Transport;
 
-struct Connection {
-    transport: Box<dyn Transport>,
+pub struct Connection<T: Transport> {
+    transport: T,
 }
 
-impl Connection {
-    pub fn new<T: Transport>(transport: T) -> Self {
-        Self {
-            transport: Box::new(transport),
-        }
+impl<T: Transport> Connection<T> {
+    pub fn new(transport: T) -> Self {
+        Self { transport }
     }
 
-    pub fn call(&mut self){
-        self.transport.
+    pub fn execute(&mut self) {
+        //self.transport.
     }
 }

@@ -17,6 +17,8 @@ categories = ["command-line-utilities"]
 exclude = ["/.gitignore", "/.github/"]
 
 [workspace.dependencies]
+zephyr-mcumgr = { version = "0.0.1", path = "./zephyr-mcumgr" }
 serialport = "4.8.1"
 deku = "0.20.0"
 thiserror = "2.0.17"
+miette = "7.6.0"

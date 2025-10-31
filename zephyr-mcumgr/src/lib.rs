@@ -1,4 +1,5 @@
-mod connection;
-mod transport;
+pub mod connection;
+pub mod transport;
 
-pub enum McuMgrGroup {}
+pub use connection::Connection;
+pub use transport::Transport;
