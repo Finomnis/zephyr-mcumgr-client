@@ -23,6 +23,7 @@ struct SmpHeader {
 }
 
 const SMP_HEADER_SIZE: usize = 8;
+const SMP_TRANSFER_BUFFER_SIZE: usize = u16::MAX as usize;
 
 mod SmpOp {
     pub const READ: u8 = 0;
@@ -46,7 +47,7 @@ pub trait Transport: Send + Read + Write {
 
     fn send_frame(
         &mut self,
-        write: bool,
+        write_operation: bool,
         sequence_num: u8,
         group_id: u16,
         command_id: u8,
@@ -55,7 +56,11 @@ pub trait Transport: Send + Read + Write {
         let header = SmpHeader {
             res: 0,
             ver: 0b01,
-            op: if write { SmpOp::WRITE } else { SmpOp::READ },
+            op: if write_operation {
+                SmpOp::WRITE
+            } else {
+                SmpOp::READ
+            },
             flags: 0,
             data_length: data.len().try_into().map_err(|_| SendError::DataTooBig)?,
             group_id,
@@ -63,7 +68,8 @@ pub trait Transport: Send + Read + Write {
             command_id,
         };
 
-        let header_data = header.to_bytes().unwrap();
+        let mut header_data = [0u8; SMP_HEADER_SIZE];
+        header.to_slice(&mut header_data).unwrap();
 
         self.write_all(&header_data)?;
         self.write_all(data)?;
@@ -71,17 +77,45 @@ pub trait Transport: Send + Read + Write {
         Ok(())
     }
 
-    fn receive_frame(&mut self) -> Result<(), SendError> {
+    fn receive_frame<'a>(
+        &mut self,
+        buffer: &'a mut [u8; SMP_TRANSFER_BUFFER_SIZE],
+        write_operation: bool,
+        sequence_num: u8,
+        group_id: u16,
+        command_id: u8,
+    ) -> Result<&'a [u8], SendError> {
         let mut header_data = [0u8; SMP_HEADER_SIZE];
 
-        loop {
+        let data_size = loop {
             self.read_exact(&mut header_data)?;
             let header = SmpHeader::from_bytes((&header_data, 0)).unwrap().1;
 
-            let mut data = vec![0u8; header.data_length.into()];
-            self.read_exact(&mut data)?;
+            let data = &mut buffer[..header.data_length.into()];
+            self.read_exact(data)?;
 
-            // TODO check
-        }
+            let expected_op = if write_operation {
+                SmpOp::WRITE_RSP
+            } else {
+                SmpOp::READ_RSP
+            };
+
+            // Receiving packets with the wrong sequence number is not an error,
+            // they should simply be silently ignored.
+            if header.sequence_num != sequence_num {
+                continue;
+            }
+
+            if (header.group_id != group_id)
+                || (header.command_id != command_id)
+                || (header.op != expected_op)
+            {
+                return Err(SendError::UnexpectedResponse);
+            }
+
+            break header.data_length.into();
+        };
+
+        return Ok(&buffer[..data_size]);
     }
 }
