@@ -1,12 +1,20 @@
-fn main() {
+use std::time::Duration;
+
+fn main() -> miette::Result<()> {
     println!("Hello world!");
 
     for port in serialport::available_ports().unwrap() {
-        println!("{:#?}", port);
+        println!("{port:#?}");
     }
 
-    let serial = serialport::new("/dev/ttyACM0", 115200).open().unwrap();
+    let serial = serialport::new("/tmp/interceptty", 115200)
+        .timeout(Duration::from_millis(500))
+        .open()
+        .unwrap();
+
     let mut connection = zephyr_mcumgr::Connection::new(serial);
 
-    connection.execute();
+    connection.execute_raw(true, 0, 0, &[])?;
+
+    Ok(())
 }

@@ -15,3 +15,4 @@ keywords.workspace = true
 [dependencies]
 zephyr-mcumgr.workspace = true
 serialport = { workspace = true, features = ["usbportinfo-interface"] }
+miette = { workspace = true, features = ["fancy"] }
