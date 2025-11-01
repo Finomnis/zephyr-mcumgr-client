@@ -12,7 +12,6 @@ readme = "README.md"
 repository = "https://github.com/Finomnis/zephyr-mcumgr-client"
 description = "Software suite for Zephyr's MCUmgr protocol"
 keywords = ["zephyr", "mcumgr", "smp"]
-categories = ["command-line-utilities"]
 
 exclude = ["/.gitignore", "/.github/"]
 

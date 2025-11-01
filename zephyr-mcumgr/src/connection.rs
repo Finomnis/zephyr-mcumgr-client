@@ -10,6 +10,8 @@ impl<T: Transport> Connection<T> {
     }
 
     pub fn execute(&mut self) {
-        //self.transport.
+        self.transport
+            .send_frame(true, 0, group_id, command_id, data)
+            .unwrap();
     }
 }

@@ -5,5 +5,8 @@ fn main() {
         println!("{:#?}", port);
     }
 
-    zephyr_mcumgr::Connection::new(serialport::new("/dev/ttyACM0", 115200).open().unwrap());
+    let serial = serialport::new("/dev/ttyACM0", 115200).open().unwrap();
+    let mut connection = zephyr_mcumgr::Connection::new(serial);
+
+    connection.execute();
 }

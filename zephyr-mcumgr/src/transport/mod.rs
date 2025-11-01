@@ -1,10 +1,7 @@
-use std::{
-    io::{self, Read, Write},
-    time::Duration,
-};
+use std::io::{self, Read, Write};
 
 use deku::prelude::*;
-use miette::{Diagnostic, IntoDiagnostic};
+use miette::Diagnostic;
 use thiserror::Error;
 
 #[derive(Debug, PartialEq, DekuRead, DekuWrite)]
