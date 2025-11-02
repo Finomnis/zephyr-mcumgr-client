@@ -9,7 +9,22 @@ pub struct SerialTransport<T> {
     crc_algo: crc::Crc<u16>,
 }
 
-impl<T> SerialTransport<T> {
+fn fill_buffer_with_data<I: Iterator<Item = u8>>(buffer: &mut [u8], data_iter: &mut I) -> usize {
+    for (pos, val) in buffer.iter_mut().enumerate() {
+        if let Some(next) = data_iter.next() {
+            *val = next;
+        } else {
+            return pos;
+        }
+    }
+
+    buffer.len()
+}
+
+impl<T> SerialTransport<T>
+where
+    T: std::io::Write + std::io::Read,
+{
     pub fn new(serial: T, mtu: usize) -> Self {
         Self {
             serial,
@@ -18,9 +33,35 @@ impl<T> SerialTransport<T> {
             crc_algo: crc::Crc::<u16>::new(&crc::CRC_16_XMODEM),
         }
     }
-}
 
-// TODO refactor body assembly into separate testable struct
+    fn send_chunked<I: Iterator<Item = u8>>(&mut self, mut data_iter: I) -> Result<(), SendError> {
+        self.transfer_buffer[0] = 6;
+        self.transfer_buffer[1] = 9;
+
+        loop {
+            let body_len = fill_buffer_with_data(&mut self.body_buffer, &mut data_iter);
+
+            if 0 == body_len {
+                break Ok(());
+            }
+
+            let base64_len = BASE64_STANDARD
+                .encode_slice(
+                    &self.body_buffer[..body_len],
+                    &mut self.transfer_buffer[2..],
+                )
+                .expect("Transfer buffer overflow; this is a bug. Please report.");
+
+            self.transfer_buffer[base64_len + 2] = 0x0a;
+
+            self.serial
+                .write_all(&self.transfer_buffer[..base64_len + 3])?;
+
+            self.transfer_buffer[0] = 4;
+            self.transfer_buffer[1] = 20;
+        }
+    }
+}
 
 impl<T> Transport for SerialTransport<T>
 where
@@ -29,71 +70,27 @@ where
     fn send_raw_frame(
         &mut self,
         header: [u8; SMP_HEADER_SIZE],
-        mut data: &[u8],
+        data: &[u8],
     ) -> Result<(), SendError> {
         let checksum = {
             let mut digest = self.crc_algo.digest();
             digest.update(&header);
             digest.update(data);
-            digest.finalize()
+            digest.finalize().to_be_bytes()
         };
 
-        let mut is_first = true;
-        while is_first || !data.is_empty() {
-            let body_header;
-            let mut body;
-            let mut body_footer;
+        let size: u16 = (SMP_HEADER_SIZE + data.len() + checksum.len())
+            .try_into()
+            .map_err(|_| SendError::DataTooBig)?;
+        let size = size.to_be_bytes();
 
-            if is_first {
-                let size: u16 = (SMP_HEADER_SIZE + data.len() + 2)
-                    .try_into()
-                    .map_err(|_| SendError::DataTooBig)?;
-
-                (body_header, body) = self.body_buffer.split_at_mut(2 + SMP_HEADER_SIZE);
-                let (body_header_1, body_header_2) = body_header.split_at_mut(2);
-                body_header_1.copy_from_slice(&size.to_be_bytes());
-                body_header_2.copy_from_slice(&header);
-            } else {
-                body_header = &mut [];
-                body = &mut self.body_buffer;
-            }
-
-            let body_len = body.len().min(data.len());
-            (body, body_footer) = body.split_at_mut(body_len);
-            if body_footer.len() >= 2 {
-                (body_footer, _) = body_footer.split_at_mut(2);
-                body_footer.copy_from_slice(&checksum.to_be_bytes())
-            } else {
-                body_footer = &mut [];
-            }
-
-            let chunk;
-            (chunk, data) = data.split_at(body_len);
-            body.copy_from_slice(chunk);
-
-            let assembled_body_len = body_header.len() + body.len() + body_footer.len();
-
-            let assembled_body = &self.body_buffer[..assembled_body_len];
-
-            if is_first {
-                self.transfer_buffer[0] = 6;
-                self.transfer_buffer[1] = 9;
-            } else {
-                self.transfer_buffer[0] = 4;
-                self.transfer_buffer[1] = 20;
-            }
-            let base64_body_len = BASE64_STANDARD
-                .encode_slice(assembled_body, &mut self.transfer_buffer[2..])
-                .unwrap();
-            self.transfer_buffer[base64_body_len + 2] = 0x0a;
-
-            self.serial
-                .write_all(&self.transfer_buffer[..base64_body_len + 3])?;
-
-            is_first = false;
-        }
-
-        Ok(())
+        self.send_chunked(
+            size.iter()
+                .chain(header.iter())
+                .chain(data.iter())
+                .chain(checksum.iter())
+                .copied(),
+        )
     }
 
     fn recv_raw_frame(&mut self, buffer: &[u8; SMP_TRANSFER_BUFFER_SIZE]) {
