@@ -153,10 +153,10 @@ where
         )
     }
 
-    fn recv_raw_frame(
+    fn recv_raw_frame<'a>(
         &mut self,
-        buffer: &mut [u8; SMP_TRANSFER_BUFFER_SIZE],
-    ) -> Result<usize, ReceiveError> {
+        buffer: &'a mut [u8; SMP_TRANSFER_BUFFER_SIZE],
+    ) -> Result<&'a [u8], ReceiveError> {
         let first_chunk = self.recv_chunk(true)?;
 
         let (len, first_data) =
@@ -200,6 +200,6 @@ where
             return Err(ReceiveError::UnexpectedResponse);
         }
 
-        Ok(data.len())
+        Ok(data)
     }
 }

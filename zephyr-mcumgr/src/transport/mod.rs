@@ -66,10 +66,10 @@ pub trait Transport {
         data: &[u8],
     ) -> Result<(), SendError>;
 
-    fn recv_raw_frame(
+    fn recv_raw_frame<'a>(
         &mut self,
-        buffer: &mut [u8; SMP_TRANSFER_BUFFER_SIZE],
-    ) -> Result<usize, ReceiveError>;
+        buffer: &'a mut [u8; SMP_TRANSFER_BUFFER_SIZE],
+    ) -> Result<&'a [u8], ReceiveError>;
 
     fn send_frame(
         &mut self,
@@ -108,40 +108,38 @@ pub trait Transport {
         group_id: u16,
         command_id: u8,
     ) -> Result<&'a [u8], ReceiveError> {
-        let len = self.recv_raw_frame(buffer)?;
-        println!("{:0x?}", &buffer[..len]);
-        return Ok(&[]);
-        // let mut header_data = [0u8; SMP_HEADER_SIZE];
+        let data_size = loop {
+            let frame = self.recv_raw_frame(buffer)?;
 
-        // let data_size = loop {
-        //     self.read_exact(&mut header_data)?;
-        //     let header = SmpHeader::from_bytes((&header_data, 0)).unwrap().1;
+            let (header_data, data) = frame
+                .split_first_chunk::<SMP_HEADER_SIZE>()
+                .ok_or(ReceiveError::UnexpectedResponse)?;
 
-        //     let data = &mut buffer[..header.data_length.into()];
-        //     self.read_exact(data)?;
+            let header = SmpHeader::from_bytes((header_data, 0)).unwrap().1;
 
-        //     let expected_op = if write_operation {
-        //         smp_op::WRITE_RSP
-        //     } else {
-        //         smp_op::READ_RSP
-        //     };
+            let expected_op = if write_operation {
+                smp_op::WRITE_RSP
+            } else {
+                smp_op::READ_RSP
+            };
 
-        //     // Receiving packets with the wrong sequence number is not an error,
-        //     // they should simply be silently ignored.
-        //     if header.sequence_num != sequence_num {
-        //         continue;
-        //     }
+            // Receiving packets with the wrong sequence number is not an error,
+            // they should simply be silently ignored.
+            if header.sequence_num != sequence_num {
+                continue;
+            }
 
-        //     if (header.group_id != group_id)
-        //         || (header.command_id != command_id)
-        //         || (header.op != expected_op)
-        //     {
-        //         return Err(ReceiveError::UnexpectedResponse);
-        //     }
+            if (header.group_id != group_id)
+                || (header.command_id != command_id)
+                || (header.op != expected_op)
+                || (usize::from(header.data_length) != data.len())
+            {
+                return Err(ReceiveError::UnexpectedResponse);
+            }
 
-        //     break header.data_length.into();
-        // };
+            break data.len();
+        };
 
-        // Ok(&buffer[..data_size])
+        Ok(&buffer[SMP_HEADER_SIZE..SMP_HEADER_SIZE + data_size])
     }
 }

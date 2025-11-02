@@ -17,7 +17,9 @@ fn main() -> miette::Result<()> {
     let mut connection =
         zephyr_mcumgr::Connection::new(SerialTransport::new(serial, SERIAL_TRANSPORT_DEFAULT_MTU));
 
-    connection.execute_raw(true, 0, 0, &[])?;
+    let result = connection.execute_raw(true, 0, 0, &[])?;
+
+    println!("{result:0x?}");
 
     Ok(())
 }
