@@ -1,11 +1,11 @@
-use std::io::{self, Read, Write};
+use std::io;
 
 use deku::prelude::*;
 use miette::Diagnostic;
 use thiserror::Error;
 
 mod serial;
-pub use serial::SerialTransport;
+pub use serial::{SERIAL_TRANSPORT_DEFAULT_MTU, SerialTransport};
 
 #[derive(Debug, PartialEq, DekuRead, DekuWrite)]
 #[deku(endian = "big")]

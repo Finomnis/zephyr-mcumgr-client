@@ -1,5 +1,7 @@
 use std::time::Duration;
 
+use zephyr_mcumgr::transport::{SERIAL_TRANSPORT_DEFAULT_MTU, SerialTransport};
+
 fn main() -> miette::Result<()> {
     println!("Hello world!");
 
@@ -13,7 +15,7 @@ fn main() -> miette::Result<()> {
         .unwrap();
 
     let mut connection =
-        zephyr_mcumgr::Connection::new(zephyr_mcumgr::transport::SerialTransport::new(serial, 127));
+        zephyr_mcumgr::Connection::new(SerialTransport::new(serial, SERIAL_TRANSPORT_DEFAULT_MTU));
 
     connection.execute_raw(true, 0, 0, &[])?;
 

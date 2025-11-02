@@ -24,6 +24,8 @@ fn fill_buffer_with_data<'a, I: Iterator<Item = u8>>(
     buffer
 }
 
+pub const SERIAL_TRANSPORT_DEFAULT_MTU: usize = 127;
+
 impl<T> SerialTransport<T>
 where
     T: std::io::Write + std::io::Read,
