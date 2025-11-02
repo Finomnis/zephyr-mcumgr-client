@@ -9,16 +9,19 @@ pub struct SerialTransport<T> {
     crc_algo: crc::Crc<u16>,
 }
 
-fn fill_buffer_with_data<I: Iterator<Item = u8>>(buffer: &mut [u8], data_iter: &mut I) -> usize {
+fn fill_buffer_with_data<'a, I: Iterator<Item = u8>>(
+    buffer: &'a mut [u8],
+    data_iter: &mut I,
+) -> &'a [u8] {
     for (pos, val) in buffer.iter_mut().enumerate() {
         if let Some(next) = data_iter.next() {
             *val = next;
         } else {
-            return pos;
+            return &buffer[..pos];
         }
     }
 
-    buffer.len()
+    buffer
 }
 
 impl<T> SerialTransport<T>
@@ -39,17 +42,14 @@ where
         self.transfer_buffer[1] = 9;
 
         loop {
-            let body_len = fill_buffer_with_data(&mut self.body_buffer, &mut data_iter);
+            let body = fill_buffer_with_data(&mut self.body_buffer, &mut data_iter);
 
-            if 0 == body_len {
+            if body.is_empty() {
                 break Ok(());
             }
 
             let base64_len = BASE64_STANDARD
-                .encode_slice(
-                    &self.body_buffer[..body_len],
-                    &mut self.transfer_buffer[2..],
-                )
+                .encode_slice(body, &mut self.transfer_buffer[2..])
                 .expect("Transfer buffer overflow; this is a bug. Please report.");
 
             self.transfer_buffer[base64_len + 2] = 0x0a;
@@ -79,7 +79,7 @@ where
             digest.finalize().to_be_bytes()
         };
 
-        let size: u16 = (SMP_HEADER_SIZE + data.len() + checksum.len())
+        let size: u16 = (header.len() + data.len() + checksum.len())
             .try_into()
             .map_err(|_| SendError::DataTooBig)?;
         let size = size.to_be_bytes();
