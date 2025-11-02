@@ -4,6 +4,9 @@ use deku::prelude::*;
 use miette::Diagnostic;
 use thiserror::Error;
 
+mod serial;
+pub use serial::SerialTransport;
+
 #[derive(Debug, PartialEq, DekuRead, DekuWrite)]
 #[deku(endian = "big")]
 struct SmpHeader {
@@ -50,7 +53,14 @@ pub enum ReceiveError {
     UnexpectedResponse,
 }
 
-pub trait Transport: Send + Read + Write {
+pub trait Transport {
+    fn send_raw_frame(
+        &mut self,
+        header: [u8; SMP_HEADER_SIZE],
+        data: &[u8],
+    ) -> Result<(), SendError>;
+    fn recv_raw_frame(&mut self, buffer: &[u8; SMP_TRANSFER_BUFFER_SIZE]);
+
     fn send_frame(
         &mut self,
         write_operation: bool,
@@ -77,10 +87,7 @@ pub trait Transport: Send + Read + Write {
         let mut header_data = [0u8; SMP_HEADER_SIZE];
         header.to_slice(&mut header_data).unwrap();
 
-        self.write_all(&header_data)?;
-        self.write_all(data)?;
-
-        Ok(())
+        self.send_raw_frame(header_data, data)
     }
 
     fn receive_frame<'a>(
@@ -91,39 +98,38 @@ pub trait Transport: Send + Read + Write {
         group_id: u16,
         command_id: u8,
     ) -> Result<&'a [u8], ReceiveError> {
-        let mut header_data = [0u8; SMP_HEADER_SIZE];
+        return Ok(&[]);
+        // let mut header_data = [0u8; SMP_HEADER_SIZE];
 
-        let data_size = loop {
-            self.read_exact(&mut header_data)?;
-            let header = SmpHeader::from_bytes((&header_data, 0)).unwrap().1;
+        // let data_size = loop {
+        //     self.read_exact(&mut header_data)?;
+        //     let header = SmpHeader::from_bytes((&header_data, 0)).unwrap().1;
 
-            let data = &mut buffer[..header.data_length.into()];
-            self.read_exact(data)?;
+        //     let data = &mut buffer[..header.data_length.into()];
+        //     self.read_exact(data)?;
 
-            let expected_op = if write_operation {
-                smp_op::WRITE_RSP
-            } else {
-                smp_op::READ_RSP
-            };
+        //     let expected_op = if write_operation {
+        //         smp_op::WRITE_RSP
+        //     } else {
+        //         smp_op::READ_RSP
+        //     };
 
-            // Receiving packets with the wrong sequence number is not an error,
-            // they should simply be silently ignored.
-            if header.sequence_num != sequence_num {
-                continue;
-            }
+        //     // Receiving packets with the wrong sequence number is not an error,
+        //     // they should simply be silently ignored.
+        //     if header.sequence_num != sequence_num {
+        //         continue;
+        //     }
 
-            if (header.group_id != group_id)
-                || (header.command_id != command_id)
-                || (header.op != expected_op)
-            {
-                return Err(ReceiveError::UnexpectedResponse);
-            }
+        //     if (header.group_id != group_id)
+        //         || (header.command_id != command_id)
+        //         || (header.op != expected_op)
+        //     {
+        //         return Err(ReceiveError::UnexpectedResponse);
+        //     }
 
-            break header.data_length.into();
-        };
+        //     break header.data_length.into();
+        // };
 
-        Ok(&buffer[..data_size])
+        // Ok(&buffer[..data_size])
     }
 }
-
-impl<T> Transport for T where T: Send + Read + Write {}
