@@ -79,17 +79,15 @@ where
             digest.finalize().to_be_bytes()
         };
 
-        let size: u16 = (header.len() + data.len() + checksum.len())
-            .try_into()
-            .map_err(|_| SendError::DataTooBig)?;
-        let size = size.to_be_bytes();
+        let size = u16::try_from(header.len() + data.len() + checksum.len())
+            .map_err(|_| SendError::DataTooBig)?
+            .to_be_bytes();
 
         self.send_chunked(
-            size.iter()
-                .chain(header.iter())
-                .chain(data.iter())
-                .chain(checksum.iter())
-                .copied(),
+            size.into_iter()
+                .chain(header)
+                .chain(data.iter().copied())
+                .chain(checksum),
         )
     }
 
