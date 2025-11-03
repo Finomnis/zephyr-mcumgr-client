@@ -14,8 +14,15 @@ fn main() -> miette::Result<()> {
     let mut connection =
         zephyr_mcumgr::Connection::new(SerialTransport::new(serial, SERIAL_TRANSPORT_DEFAULT_MTU));
 
-    let result = connection.execute_cbor(&commands::os::Echo { d: "Hello world!" })?;
-    println!("{result:?}");
+    println!(
+        "{:?}",
+        connection.execute_cbor(&commands::os::Echo { d: "Hello world!" })
+    );
+
+    println!(
+        "{:#?}",
+        connection.execute_cbor(&commands::os::TaskStatistics)
+    );
 
     Ok(())
 }
