@@ -118,6 +118,11 @@ where
         if let Some(base64_data) = base64_data {
             let len = BASE64_STANDARD.decode_slice(base64_data, &mut self.body_buffer)?;
 
+            log::debug!(
+                "Received Chunk ({}, {} bytes)",
+                if first { "initial" } else { "partial" },
+                len
+            );
             Ok(&self.body_buffer[..len])
         } else {
             Err(ReceiveError::FrameTooBig)
@@ -199,6 +204,8 @@ where
         if expected_checksum != actual_checksum {
             return Err(ReceiveError::UnexpectedResponse);
         }
+
+        log::debug!("Received SMP Frame ({} bytes)", data.len());
 
         Ok(data)
     }

@@ -22,3 +22,4 @@ crc.workspace = true
 ringbuf.workspace = true
 serde = { workspace = true, features = ["derive"] }
 ciborium.workspace = true
+log.workspace = true

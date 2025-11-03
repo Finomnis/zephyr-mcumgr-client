@@ -1,3 +1,4 @@
+pub mod fs;
 pub mod os;
 
 use serde::{Deserialize, Serialize};
