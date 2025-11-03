@@ -8,8 +8,8 @@ use crate::{
 use miette::Diagnostic;
 use thiserror::Error;
 
-pub struct Connection<T: Transport> {
-    transport: T,
+pub struct Connection {
+    transport: Box<dyn Transport>,
     next_seqnum: u8,
     transport_buffer: [u8; u16::MAX as usize],
 }
@@ -39,10 +39,10 @@ pub enum ExecuteError {
     ErrorResponse(DeviceError),
 }
 
-impl<T: Transport> Connection<T> {
-    pub fn new(transport: T) -> Self {
+impl Connection {
+    pub fn new<T: Transport + 'static>(transport: T) -> Self {
         Self {
-            transport,
+            transport: Box::new(transport),
             next_seqnum: rand::random(),
             transport_buffer: [0; u16::MAX as usize],
         }

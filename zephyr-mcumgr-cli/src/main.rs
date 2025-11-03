@@ -1,28 +1,27 @@
-use std::time::Duration;
+use std::time::{Duration, SystemTime};
 
-use zephyr_mcumgr::{
-    commands,
-    transport::{SERIAL_TRANSPORT_DEFAULT_MTU, SerialTransport},
-};
+use miette::IntoDiagnostic;
+use zephyr_mcumgr::MCUmgrClient;
 
 fn main() -> miette::Result<()> {
-    let serial = serialport::new("/tmp/interceptty", 115200)
+    let serial = serialport::new("COM14", 115200)
         .timeout(Duration::from_millis(500))
         .open()
-        .unwrap();
+        .into_diagnostic()?;
 
-    let mut connection =
-        zephyr_mcumgr::Connection::new(SerialTransport::new(serial, SERIAL_TRANSPORT_DEFAULT_MTU));
+    let mut client = MCUmgrClient::from_serial(serial);
 
-    println!(
-        "{:?}",
-        connection.execute_cbor(&commands::os::Echo { d: "Hello world!" })
-    );
+    println!("{:?}", client.os_echo("Hello world!")?);
 
-    println!(
-        "{:#?}",
-        connection.execute_cbor(&commands::os::TaskStatistics)
-    );
+    let t0 = SystemTime::now();
+    let iters: usize = 1000;
+    for _ in 0..iters {
+        client.os_echo("Hello world!")?;
+    }
+    let t1 = SystemTime::now();
+
+    let duration = t1.duration_since(t0).unwrap().as_secs_f32();
+    println!("{:?}", iters as f32 / duration);
 
     Ok(())
 }
