@@ -30,13 +30,14 @@ fn fill_buffer_with_data<'a, I: Iterator<Item = u8>>(
     buffer
 }
 
-pub const SERIAL_TRANSPORT_DEFAULT_MTU: usize = 127;
+pub const SERIAL_TRANSPORT_ZEPHYR_MTU: usize = 127;
 
 impl<T> SerialTransport<T>
 where
     T: std::io::Write + std::io::Read,
 {
-    pub fn new(serial: T, mtu: usize) -> Self {
+    pub fn new(serial: T) -> Self {
+        let mtu = SERIAL_TRANSPORT_ZEPHYR_MTU;
         Self {
             serial,
             transfer_buffer: vec![0u8; mtu].into_boxed_slice(),
@@ -65,6 +66,17 @@ where
 
             self.serial
                 .write_all(&self.transfer_buffer[..base64_len + 3])?;
+
+            log::debug!(
+                "Sent Chunk ({}, {} bytes raw, {} bytes encoded)",
+                if self.transfer_buffer[0] == 6 {
+                    "initial"
+                } else {
+                    "partial"
+                },
+                body.len(),
+                base64_len,
+            );
 
             self.transfer_buffer[0] = 4;
             self.transfer_buffer[1] = 20;
@@ -118,6 +130,12 @@ where
         if let Some(base64_data) = base64_data {
             let len = BASE64_STANDARD.decode_slice(base64_data, &mut self.body_buffer)?;
 
+            log::debug!(
+                "Received Chunk ({}, {} bytes raw, {} bytes decoded)",
+                if first { "initial" } else { "partial" },
+                base64_data.len(),
+                len
+            );
             Ok(&self.body_buffer[..len])
         } else {
             Err(ReceiveError::FrameTooBig)
@@ -134,6 +152,8 @@ where
         header: [u8; SMP_HEADER_SIZE],
         data: &[u8],
     ) -> Result<(), SendError> {
+        log::debug!("Sending SMP Frame ({} bytes)", data.len());
+
         let checksum = {
             let mut digest = self.crc_algo.digest();
             digest.update(&header);
@@ -199,6 +219,8 @@ where
         if expected_checksum != actual_checksum {
             return Err(ReceiveError::UnexpectedResponse);
         }
+
+        log::debug!("Received SMP Frame ({} bytes)", data.len());
 
         Ok(data)
     }

@@ -12,7 +12,6 @@ repository.workspace = true
 keywords.workspace = true
 
 [dependencies]
-deku.workspace = true
 thiserror.workspace = true
 serialport.workspace = true
 miette.workspace = true
@@ -21,4 +20,6 @@ base64.workspace = true
 crc.workspace = true
 ringbuf.workspace = true
 serde = { workspace = true, features = ["derive"] }
+serde_bytes.workspace = true
 ciborium.workspace = true
+log.workspace = true

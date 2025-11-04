@@ -1,4 +1,4 @@
-use std::io::Cursor;
+use std::{fmt::Display, io::Cursor};
 
 use crate::{
     commands::{ErrResponse, ErrResponseV2, McuMgrRequest},
@@ -9,7 +9,7 @@ use miette::Diagnostic;
 use thiserror::Error;
 
 pub struct Connection {
-    transport: Box<dyn Transport>,
+    transport: Box<dyn Transport + Send>,
     next_seqnum: u8,
     transport_buffer: [u8; u16::MAX as usize],
 }
@@ -18,6 +18,35 @@ pub struct Connection {
 pub enum DeviceError {
     V1 { rc: i32 },
     V2 { group: u32, rc: u32 },
+}
+
+impl Display for DeviceError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            DeviceError::V1 { rc } => {
+                let err_str = match *rc {
+                    0 => format!("MGMT_ERR_EOK"),
+                    1 => format!("MGMT_ERR_EUNKNOWN"),
+                    2 => format!("MGMT_ERR_ENOMEM"),
+                    3 => format!("MGMT_ERR_EINVAL"),
+                    4 => format!("MGMT_ERR_ETIMEOUT"),
+                    5 => format!("MGMT_ERR_ENOENT"),
+                    6 => format!("MGMT_ERR_EBADSTATE"),
+                    7 => format!("MGMT_ERR_EMSGSIZE"),
+                    8 => format!("MGMT_ERR_ENOTSUP"),
+                    9 => format!("MGMT_ERR_ECORRUPT"),
+                    10 => format!("MGMT_ERR_EBUSY"),
+                    11 => format!("MGMT_ERR_EACCESSDENIED"),
+                    12 => format!("MGMT_ERR_UNSUPPORTED_TOO_OLD"),
+                    13 => format!("MGMT_ERR_UNSUPPORTED_TOO_NEW"),
+                    256.. => format!("MGMT_ERR_EPERUSER({rc})"),
+                    _ => format!("Unknown({rc})"),
+                };
+                write!(f, "V1({err_str})")
+            }
+            DeviceError::V2 { group, rc } => write!(f, "V2(group={group},rc={rc}"),
+        }
+    }
 }
 
 #[derive(Error, Debug, Diagnostic)]
@@ -34,13 +63,13 @@ pub enum ExecuteError {
     #[error("cbor decoding failed")]
     #[diagnostic(code(zephyr_mcumgr::connection::execute::decode))]
     DecodeFailed,
-    #[error("device returned an error")]
+    #[error("device returned error {0}")]
     #[diagnostic(code(zephyr_mcumgr::connection::execute::device_error))]
     ErrorResponse(DeviceError),
 }
 
 impl Connection {
-    pub fn new<T: Transport + 'static>(transport: T) -> Self {
+    pub fn new<T: Transport + Send + 'static>(transport: T) -> Self {
         Self {
             transport: Box::new(transport),
             next_seqnum: rand::random(),
@@ -56,6 +85,11 @@ impl Connection {
         ciborium::into_writer(request, &mut cursor).map_err(|_| ExecuteError::EncodeFailed)?;
         let data_size = cursor.position() as usize;
         let data = &self.transport_buffer[..data_size];
+
+        log::debug!(
+            "TX data: {}",
+            data.iter().map(|e| format!("{e:02x}")).collect::<String>()
+        );
 
         let sequence_num = self.next_seqnum;
         self.next_seqnum = self.next_seqnum.wrapping_add(1);
@@ -75,6 +109,14 @@ impl Connection {
             R::GROUP_ID,
             R::COMMAND_ID,
         )?;
+
+        log::debug!(
+            "RX data: {}",
+            response
+                .iter()
+                .map(|e| format!("{e:02x}"))
+                .collect::<String>()
+        );
 
         let err: ErrResponse =
             ciborium::from_reader(Cursor::new(response)).map_err(|_| ExecuteError::DecodeFailed)?;

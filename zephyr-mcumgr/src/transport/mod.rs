@@ -1,26 +1,48 @@
 use std::io;
 
-use deku::prelude::*;
 use miette::Diagnostic;
 use thiserror::Error;
 
 mod serial;
-pub use serial::{SERIAL_TRANSPORT_DEFAULT_MTU, SerialTransport};
+pub use serial::SerialTransport;
 
-#[derive(Debug, PartialEq, DekuRead, DekuWrite)]
-#[deku(endian = "big")]
+#[derive(Debug, PartialEq, Clone, Copy)]
 struct SmpHeader {
-    #[deku(bits = 3)]
-    res: u8,
-    #[deku(bits = 2)]
     ver: u8,
-    #[deku(bits = 3)]
     op: u8,
     flags: u8,
     data_length: u16,
     group_id: u16,
     sequence_num: u8,
     command_id: u8,
+}
+
+impl SmpHeader {
+    fn from_bytes(data: [u8; SMP_HEADER_SIZE]) -> Self {
+        Self {
+            ver: (data[0] >> 3) & 0b11,
+            op: data[0] & 0b111,
+            flags: data[1],
+            data_length: u16::from_be_bytes([data[2], data[3]]),
+            group_id: u16::from_be_bytes([data[4], data[5]]),
+            sequence_num: data[6],
+            command_id: data[7],
+        }
+    }
+    fn to_bytes(self) -> [u8; SMP_HEADER_SIZE] {
+        let [length_0, length_1] = self.data_length.to_be_bytes();
+        let [group_id_0, group_id_1] = self.group_id.to_be_bytes();
+        [
+            ((self.ver & 0b11) << 3) | (self.op & 0b111),
+            self.flags,
+            length_0,
+            length_1,
+            group_id_0,
+            group_id_1,
+            self.sequence_num,
+            self.command_id,
+        ]
+    }
 }
 
 const SMP_HEADER_SIZE: usize = 8;
@@ -80,7 +102,6 @@ pub trait Transport {
         data: &[u8],
     ) -> Result<(), SendError> {
         let header = SmpHeader {
-            res: 0,
             ver: 0b01,
             op: if write_operation {
                 smp_op::WRITE
@@ -94,8 +115,7 @@ pub trait Transport {
             command_id,
         };
 
-        let mut header_data = [0u8; SMP_HEADER_SIZE];
-        header.to_slice(&mut header_data).unwrap();
+        let header_data = header.to_bytes();
 
         self.send_raw_frame(header_data, data)
     }
@@ -115,7 +135,7 @@ pub trait Transport {
                 .split_first_chunk::<SMP_HEADER_SIZE>()
                 .ok_or(ReceiveError::UnexpectedResponse)?;
 
-            let header = SmpHeader::from_bytes((header_data, 0)).unwrap().1;
+            let header = SmpHeader::from_bytes(*header_data);
 
             let expected_op = if write_operation {
                 smp_op::WRITE_RSP

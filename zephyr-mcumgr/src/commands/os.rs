@@ -24,7 +24,7 @@ impl<'a> super::McuMgrRequest for Echo<'a> {
 pub struct TaskStatistics;
 
 #[derive(Debug, Deserialize)]
-pub struct TaskStatsEntry {
+pub struct TaskStatisticsEntry {
     pub prio: i32,
     pub tid: u32,
     pub state: u32,
@@ -36,7 +36,7 @@ pub struct TaskStatsEntry {
 
 #[derive(Debug, Deserialize)]
 pub struct TaskStatisticsResponse {
-    pub tasks: HashMap<String, TaskStatsEntry>,
+    pub tasks: HashMap<String, TaskStatisticsEntry>,
 }
 
 impl super::McuMgrRequest for TaskStatistics {
@@ -45,4 +45,21 @@ impl super::McuMgrRequest for TaskStatistics {
     const WRITE_OPERATION: bool = false;
     const GROUP_ID: u16 = 0;
     const COMMAND_ID: u8 = 2;
+}
+
+#[derive(Debug, Serialize)]
+pub struct MCUmgrParameters;
+
+#[derive(Debug, Deserialize)]
+pub struct MCUmgrParametersResponse {
+    pub buf_size: u32,
+    pub buf_count: u32,
+}
+
+impl super::McuMgrRequest for MCUmgrParameters {
+    type Response = MCUmgrParametersResponse;
+
+    const WRITE_OPERATION: bool = false;
+    const GROUP_ID: u16 = 0;
+    const COMMAND_ID: u8 = 6;
 }
