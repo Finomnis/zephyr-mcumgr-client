@@ -1,7 +1,7 @@
 use std::{fmt::Display, io::Cursor};
 
 use crate::{
-    commands::{ErrResponse, ErrResponseV2, McuMgrRequest},
+    commands::{ErrResponse, ErrResponseV2, McuMgrCommand},
     transport::{ReceiveError, SendError, Transport},
 };
 
@@ -77,7 +77,7 @@ impl Connection {
         }
     }
 
-    pub fn execute_cbor<R: McuMgrRequest>(
+    pub fn execute_cbor<R: McuMgrCommand>(
         &mut self,
         request: &R,
     ) -> Result<R::Response, ExecuteError> {

@@ -1,23 +1,36 @@
+/// [File management](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_groups/smp_group_8.html) group commands
 pub mod fs;
+/// [Default/OS Management](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_groups/smp_group_0.html) group commands
 pub mod os;
 
 use serde::{Deserialize, Serialize};
 
+/// SMP version 2 group based error message
 #[derive(Debug, Deserialize)]
 pub struct ErrResponseV2 {
+    /// group of the group-based error code
     pub group: u32,
+    /// contains the index of the group-based error code
     pub rc: u32,
 }
 
+/// [SMP error message](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_protocol.html#minimal-response-smp-data)
 #[derive(Debug, Deserialize)]
 pub struct ErrResponse {
+    /// SMP version 1 error code
     pub rc: Option<i32>,
+    /// SMP version 2 error message
     pub err: Option<ErrResponseV2>,
 }
 
-pub trait McuMgrRequest: Serialize {
+/// MCUmgr command
+pub trait McuMgrCommand: Serialize {
+    /// The response type of the command
     type Response: for<'a> Deserialize<'a>;
+    /// Whether this command is a read or write operation
     const WRITE_OPERATION: bool;
+    /// The Group ID of the command
     const GROUP_ID: u16;
+    /// The Command ID
     const COMMAND_ID: u8;
 }
