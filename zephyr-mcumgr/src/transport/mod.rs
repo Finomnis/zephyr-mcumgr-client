@@ -49,10 +49,10 @@ const SMP_HEADER_SIZE: usize = 8;
 pub const SMP_TRANSFER_BUFFER_SIZE: usize = u16::MAX as usize;
 
 mod smp_op {
-    pub const READ: u8 = 0;
-    pub const READ_RSP: u8 = 1;
-    pub const WRITE: u8 = 2;
-    pub const WRITE_RSP: u8 = 3;
+    pub(super) const READ: u8 = 0;
+    pub(super) const READ_RSP: u8 = 1;
+    pub(super) const WRITE: u8 = 2;
+    pub(super) const WRITE_RSP: u8 = 3;
 }
 
 #[derive(Error, Debug, Diagnostic)]

@@ -12,7 +12,7 @@ use crate::{
 /// The default SMP frame size of Zephyr.
 ///
 /// Matches Zephyr default value of [MCUMGR_TRANSPORT_NETBUF_SIZE](https://github.com/zephyrproject-rtos/zephyr/blob/v4.2.1/subsys/mgmt/mcumgr/transport/Kconfig#L40).
-pub const ZEPHYR_DEFAULT_SMP_FRAME_SIZE: usize = 384;
+const ZEPHYR_DEFAULT_SMP_FRAME_SIZE: usize = 384;
 
 pub struct MCUmgrClient {
     connection: Connection,

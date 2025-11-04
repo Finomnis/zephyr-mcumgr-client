@@ -30,7 +30,7 @@ fn fill_buffer_with_data<'a, I: Iterator<Item = u8>>(
     buffer
 }
 
-pub const SERIAL_TRANSPORT_ZEPHYR_MTU: usize = 127;
+const SERIAL_TRANSPORT_ZEPHYR_MTU: usize = 127;
 
 impl<T> SerialTransport<T>
 where
