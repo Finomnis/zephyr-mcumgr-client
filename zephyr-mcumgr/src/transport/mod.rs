@@ -91,17 +91,37 @@ pub enum ReceiveError {
 
 /// Defines the API of the SMP transport layer
 pub trait Transport {
+    /// Send a raw SMP frame over the bus.
+    ///
+    /// This function must be provided by the implementing struct
+    /// but should not be called directly.
     fn send_raw_frame(
         &mut self,
         header: [u8; SMP_HEADER_SIZE],
         data: &[u8],
     ) -> Result<(), SendError>;
 
+    /// Receive a raw SMP frame from the bus.
+    ///
+    /// This function must be provided by the implementing struct
+    /// but should not be called directly.
     fn recv_raw_frame<'a>(
         &mut self,
         buffer: &'a mut [u8; SMP_TRANSFER_BUFFER_SIZE],
     ) -> Result<&'a [u8], ReceiveError>;
 
+    /// Send an SMP frame over the bus.
+    ///
+    /// # Arguments
+    ///
+    /// * `write_operation` - If the frame contains a write or read operation.
+    /// * `sequence_num` - A sequence number. Must be different every time this function is called.
+    /// * `group_id` - The group ID of the command.
+    /// * `command_id` - The command ID.
+    /// * `data` - The payload data of the command, most likely CBOR encoded.
+    ///
+    /// **IMPORTANT:** Be aware that the entire header + data must fit within one SMP protocol frame.
+    ///
     fn send_frame(
         &mut self,
         write_operation: bool,
@@ -129,6 +149,20 @@ pub trait Transport {
         self.send_raw_frame(header_data, data)
     }
 
+    /// Receive an SMP frame from the bus.
+    ///
+    /// # Arguments
+    ///
+    /// * `buffer` - A buffer that the data will be read into.
+    /// * `write_operation` - If this is the response to a write or read operation.
+    /// * `sequence_num` - A sequence number. Must match the sequence_num of the accompanying [`Transport::send_frame`] call.
+    /// * `group_id` - The group ID of the command.
+    /// * `command_id` - The command ID.
+    ///
+    /// # Return
+    ///
+    /// The payload data of the response, most likely CBOR encoded.
+    ///
     fn receive_frame<'a>(
         &mut self,
         buffer: &'a mut [u8; SMP_TRANSFER_BUFFER_SIZE],

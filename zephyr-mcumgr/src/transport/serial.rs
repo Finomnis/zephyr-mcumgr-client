@@ -7,6 +7,7 @@ use ringbuf::{
 
 use super::{ReceiveError, SMP_HEADER_SIZE, SMP_TRANSFER_BUFFER_SIZE, SendError, Transport};
 
+/// A transport layer implementation for serial ports.
 pub struct SerialTransport<T> {
     transfer_buffer: Box<[u8]>,
     body_buffer: Box<[u8]>,
@@ -36,6 +37,12 @@ impl<T> SerialTransport<T>
 where
     T: std::io::Write + std::io::Read,
 {
+    /// Create a new [`SerialTransport`].
+    ///
+    /// # Arguments
+    ///
+    /// * `serial` - A serial port object, like [`serialport::SerialPort`].
+    ///
     pub fn new(serial: T) -> Self {
         let mtu = SERIAL_TRANSPORT_ZEPHYR_MTU;
         Self {
@@ -47,6 +54,12 @@ where
         }
     }
 
+    /// Take a raw data stream, split it into SMP transport frames and transmit them.
+    ///
+    /// # Arguments
+    ///
+    /// * `data_iter` - An iterator that produces the binary data of the message to send.
+    ///
     fn send_chunked<I: Iterator<Item = u8>>(&mut self, mut data_iter: I) -> Result<(), SendError> {
         self.transfer_buffer[0] = 6;
         self.transfer_buffer[1] = 9;
@@ -83,7 +96,16 @@ where
         }
     }
 
-    // Result will be in `self.`
+    /// Receive an SMP transport frame and decode it.
+    ///
+    /// # Arguments
+    ///
+    /// * `first` - whether this is the first first frame of the message.
+    ///
+    /// # Return
+    ///
+    /// The received data
+    ///
     fn recv_chunk(&mut self, first: bool) -> Result<&[u8], ReceiveError> {
         let expected_header_0 = if first { 6 } else { 4 };
         let expected_header_1 = if first { 9 } else { 20 };
