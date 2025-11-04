@@ -14,7 +14,7 @@ pub struct FileDownload<'a> {
 pub struct FileDownloadResponse {
     /// offset the response is for
     pub off: u64,
-    /// chunk of data read from file; it is CBOR encoded stream of bytes with embedded size
+    /// chunk of data read from file
     pub data: Vec<u8>,
     /// length of file, this field is only mandatory when “off” is 0
     pub len: Option<u64>,
@@ -53,7 +53,7 @@ pub const fn file_upload_max_data_chunk_size(smp_frame_size: usize) -> usize {
 pub struct FileUpload<'a, 'b> {
     /// offset to start/continue upload at
     pub off: u64,
-    /// chunk of data to write to the file; it is CBOR encoded with length embedded
+    /// chunk of data to write to the file
     #[serde(with = "serde_bytes")]
     pub data: &'a [u8],
     /// absolute path to a file
