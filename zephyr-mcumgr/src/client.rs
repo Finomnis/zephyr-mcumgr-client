@@ -64,7 +64,7 @@ impl MCUmgrClient {
     pub fn use_auto_frame_size(&mut self) -> Result<(), ExecuteError> {
         let mcumgr_params = self
             .connection
-            .execute_cbor(&commands::os::MCUmgrParameters)?;
+            .execute_command(&commands::os::MCUmgrParameters)?;
 
         self.smp_frame_size = mcumgr_params.buf_size as usize;
 
@@ -75,7 +75,7 @@ impl MCUmgrClient {
 
     pub fn os_echo(&mut self, msg: impl AsRef<str>) -> Result<String, ExecuteError> {
         self.connection
-            .execute_cbor(&commands::os::Echo { d: msg.as_ref() })
+            .execute_command(&commands::os::Echo { d: msg.as_ref() })
             .map(|resp| resp.r)
     }
 
@@ -99,7 +99,7 @@ impl MCUmgrClient {
         let name = name.as_ref();
         let response = self
             .connection
-            .execute_cbor(&commands::fs::FileDownload { name, off: 0 })?;
+            .execute_command(&commands::fs::FileDownload { name, off: 0 })?;
 
         let file_len = response.len.ok_or(FileDownloadError::MissingSize)?;
         if response.off != 0 {
@@ -114,7 +114,7 @@ impl MCUmgrClient {
         while offset < file_len {
             let response = self
                 .connection
-                .execute_cbor(&commands::fs::FileDownload { name, off: offset })?;
+                .execute_command(&commands::fs::FileDownload { name, off: offset })?;
 
             if response.off != offset {
                 return Err(FileDownloadError::UnexpectedOffset);
@@ -164,7 +164,7 @@ impl MCUmgrClient {
             let chunk_buffer = &mut data_buffer[..current_chunk_size];
             reader.read_exact(chunk_buffer)?;
 
-            self.connection.execute_cbor(&commands::fs::FileUpload {
+            self.connection.execute_command(&commands::fs::FileUpload {
                 off: offset,
                 data: chunk_buffer,
                 name,

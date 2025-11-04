@@ -25,20 +25,20 @@ impl Display for DeviceError {
         match self {
             DeviceError::V1 { rc } => {
                 let err_str = match *rc {
-                    0 => format!("MGMT_ERR_EOK"),
-                    1 => format!("MGMT_ERR_EUNKNOWN"),
-                    2 => format!("MGMT_ERR_ENOMEM"),
-                    3 => format!("MGMT_ERR_EINVAL"),
-                    4 => format!("MGMT_ERR_ETIMEOUT"),
-                    5 => format!("MGMT_ERR_ENOENT"),
-                    6 => format!("MGMT_ERR_EBADSTATE"),
-                    7 => format!("MGMT_ERR_EMSGSIZE"),
-                    8 => format!("MGMT_ERR_ENOTSUP"),
-                    9 => format!("MGMT_ERR_ECORRUPT"),
-                    10 => format!("MGMT_ERR_EBUSY"),
-                    11 => format!("MGMT_ERR_EACCESSDENIED"),
-                    12 => format!("MGMT_ERR_UNSUPPORTED_TOO_OLD"),
-                    13 => format!("MGMT_ERR_UNSUPPORTED_TOO_NEW"),
+                    0 => "MGMT_ERR_EOK".to_string(),
+                    1 => "MGMT_ERR_EUNKNOWN".to_string(),
+                    2 => "MGMT_ERR_ENOMEM".to_string(),
+                    3 => "MGMT_ERR_EINVAL".to_string(),
+                    4 => "MGMT_ERR_ETIMEOUT".to_string(),
+                    5 => "MGMT_ERR_ENOENT".to_string(),
+                    6 => "MGMT_ERR_EBADSTATE".to_string(),
+                    7 => "MGMT_ERR_EMSGSIZE".to_string(),
+                    8 => "MGMT_ERR_ENOTSUP".to_string(),
+                    9 => "MGMT_ERR_ECORRUPT".to_string(),
+                    10 => "MGMT_ERR_EBUSY".to_string(),
+                    11 => "MGMT_ERR_EACCESSDENIED".to_string(),
+                    12 => "MGMT_ERR_UNSUPPORTED_TOO_OLD".to_string(),
+                    13 => "MGMT_ERR_UNSUPPORTED_TOO_NEW".to_string(),
                     256.. => format!("MGMT_ERR_EPERUSER({rc})"),
                     _ => format!("Unknown({rc})"),
                 };
@@ -77,7 +77,7 @@ impl Connection {
         }
     }
 
-    pub fn execute_cbor<R: McuMgrCommand>(
+    pub fn execute_command<R: McuMgrCommand>(
         &mut self,
         request: &R,
     ) -> Result<R::Response, ExecuteError> {
@@ -135,7 +135,7 @@ impl Connection {
         Ok(decoded_response)
     }
 
-    pub fn execute_raw(
+    pub fn execute_raw_command(
         &mut self,
         write_operation: bool,
         group_id: u16,
