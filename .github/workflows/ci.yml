@@ -150,7 +150,7 @@ jobs:
         uses: taiki-e/install-action@cargo-minimal-versions
 
       - name: Determine MSRV
-        run: echo "MSRV=$(cargo msrv show --output-format=minimal)" >> $GITHUB_ENV
+        run: echo "MSRV=$(cargo msrv --path zephyr-mcumgr show --output-format=minimal)" >> $GITHUB_ENV
 
       - name: Show MSRV
         run: echo "$MSRV"
