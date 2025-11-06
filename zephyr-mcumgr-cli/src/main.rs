@@ -5,7 +5,6 @@ mod args;
 use std::time::Duration;
 
 use clap::Parser;
-use log;
 use miette::IntoDiagnostic;
 use miette::miette;
 use zephyr_mcumgr::MCUmgrClient;
@@ -34,9 +33,7 @@ fn main() -> miette::Result<()> {
         args::Group::Os { command } => match command {
             args::OsCommand::Echo { msg } => println!("{}", client.os_echo(msg)?),
         },
-        args::Group::Fs { command } => match command {
-            args::FsCommand::Foo => println!("Bar"),
-        },
+        args::Group::Fs { command } => match command {},
     }
 
     Ok(())

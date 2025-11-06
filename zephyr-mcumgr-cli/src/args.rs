@@ -3,6 +3,7 @@ use clap::{Parser, Subcommand};
 /// Command line client for Zephyr's MCUmgr SMP protocol
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
+#[command(disable_help_subcommand = true)]
 pub struct App {
     /// Use the given serial port as backend
     #[arg(short, long)]
@@ -23,7 +24,7 @@ pub struct App {
 
 #[derive(Debug, Subcommand)]
 pub enum OsCommand {
-    /// Executes an echo command
+    /// Executes an echo command on the device
     Echo {
         /// The message to echo
         msg: String,
@@ -31,21 +32,18 @@ pub enum OsCommand {
 }
 
 #[derive(Debug, Subcommand)]
-pub enum FsCommand {
-    Foo,
-}
+pub enum FsCommand {}
 
 #[derive(Debug, Subcommand)]
 pub enum Group {
-    /// Help message for read.
+    /// Default/OS Management
     Os {
         #[command(subcommand)]
         command: OsCommand,
     },
-    /// FS command
+    /// File Management
     Fs {
         #[command(subcommand)]
         command: FsCommand,
     },
-    // ...other commands (can #[clap(flatten)] other enum variants here)
 }

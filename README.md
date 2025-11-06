@@ -34,6 +34,7 @@ fn main() {
     println!("{:?}", client.os_echo("Hello world!").unwrap());
 }
 ```
+
 ```none
 "Hello world!"
 ```
@@ -41,6 +42,7 @@ fn main() {
 ## Usage as a library
 
 To use this library in your project, enter your project directory and run:
+
 ```none
 cargo add zephyr-mcumgr
 ```
