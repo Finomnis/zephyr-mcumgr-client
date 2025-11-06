@@ -12,6 +12,10 @@ readme.workspace = true
 repository.workspace = true
 keywords.workspace = true
 
+[[bin]]
+name = "zephyr-mcumgr"
+path = "src/main.rs"
+
 [dependencies]
 zephyr-mcumgr.workspace = true
 serialport = { workspace = true, features = ["usbportinfo-interface"] }

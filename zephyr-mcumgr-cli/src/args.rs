@@ -9,11 +9,11 @@ pub struct App {
     pub serial: Option<String>,
 
     /// Serial port baud rate
-    #[arg(long, default_value_t = 115200)]
+    #[arg(short, long, default_value_t = 115200)]
     pub baud: u32,
 
     /// Communication timeout (in ms)
-    #[arg(long, default_value_t = 500)]
+    #[arg(short, long, default_value_t = 500)]
     pub timeout: u64,
 
     /// Command group
