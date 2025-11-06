@@ -28,6 +28,9 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v5
 
+      - name: Install dependencies
+        uses: sudo apt-get install -y libudev-dev
+
       - name: Install Rust
         run: rustup update ${{ matrix.rust }} && rustup default ${{ matrix.rust }}
 
@@ -52,6 +55,9 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v5
 
+      - name: Install dependencies
+        uses: sudo apt-get install -y libudev-dev
+
       - name: Install stable toolchain
         uses: dtolnay/rust-toolchain@stable
 
@@ -66,7 +72,10 @@ jobs:
       RUSTFLAGS: "-D warnings"
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
+
+      - name: Install dependencies
+        uses: sudo apt-get install -y libudev-dev
 
       - name: Install cargo-binstall
         uses: taiki-e/install-action@cargo-binstall
@@ -95,6 +104,9 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v5
 
+      - name: Install dependencies
+        uses: sudo apt-get install -y libudev-dev
+
       - name: Install nightly toolchain
         uses: dtolnay/rust-toolchain@nightly
 
@@ -115,6 +127,9 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v5
+
+      - name: Install dependencies
+        uses: sudo apt-get install -y libudev-dev
 
       - name: Install nightly toolchain
         uses: dtolnay/rust-toolchain@nightly
@@ -147,6 +162,9 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v5
 
+      - name: Install dependencies
+        uses: sudo apt-get install -y libudev-dev
+
       - name: Install stable toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -165,6 +183,9 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v5
 
+      - name: Install dependencies
+        uses: sudo apt-get install -y libudev-dev
+
       - name: Install stable toolchain
         uses: dtolnay/rust-toolchain@stable
 
@@ -181,9 +202,9 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v5
 
-      - name: Install llvm
-        # Required to resolve symbols in sanitizer output
-        run: sudo apt-get install -y llvm
+      - name: Install dependencies
+        # llvm required to resolve symbols in sanitizer output
+        uses: sudo apt-get install -y libudev-dev llvm
 
       - name: Install nightly toolchain
         uses: dtolnay/rust-toolchain@nightly
@@ -220,6 +241,9 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v5
+
+      - name: Install dependencies
+        uses: sudo apt-get install -y libudev-dev
 
       - name: Install stable toolchain
         uses: dtolnay/rust-toolchain@stable
