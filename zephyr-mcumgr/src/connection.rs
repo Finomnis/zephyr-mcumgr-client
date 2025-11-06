@@ -61,7 +61,7 @@ impl Display for DeviceError {
                 };
                 write!(f, "V1({err_str})")
             }
-            DeviceError::V2 { group, rc } => write!(f, "V2(group={group},rc={rc}"),
+            DeviceError::V2 { group, rc } => write!(f, "V2(group={group},rc={rc})"),
         }
     }
 }
