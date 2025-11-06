@@ -31,6 +31,7 @@ fn fill_buffer_with_data<'a, I: Iterator<Item = u8>>(
     buffer
 }
 
+/// See Zephyr's [`MCUMGR_SERIAL_MAX_FRAME`](https://github.com/zephyrproject-rtos/zephyr/blob/v4.2.1/include/zephyr/mgmt/mcumgr/transport/serial.h#L18).
 const SERIAL_TRANSPORT_ZEPHYR_MTU: usize = 127;
 
 impl<T> SerialTransport<T>

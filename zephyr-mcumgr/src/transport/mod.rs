@@ -85,7 +85,7 @@ pub enum ReceiveError {
     FrameTooBig,
     /// The response we received is not base64 encoded
     #[error("failed to decode base64 data")]
-    #[diagnostic(code(zephyr_mcumgr::transport::recv::too_big))]
+    #[diagnostic(code(zephyr_mcumgr::transport::recv::base64_decode))]
     Base64DecodeError(#[from] base64::DecodeSliceError),
 }
 
