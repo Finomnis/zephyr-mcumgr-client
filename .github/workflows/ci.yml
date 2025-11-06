@@ -1,0 +1,233 @@
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  release:
+    types: [published]
+
+name: CI
+
+jobs:
+  test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    needs: [lints, docs]
+    env:
+      RUSTFLAGS: "-D warnings"
+    strategy:
+      matrix:
+        target:
+          - aarch64-unknown-linux-gnu
+          - x86_64-pc-windows-gnu
+          - x86_64-unknown-linux-gnu
+        rust:
+          - stable
+          - nightly
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v5
+
+      - name: Install Rust
+        run: rustup update ${{ matrix.rust }} && rustup default ${{ matrix.rust }}
+
+      - name: Install cross toolchain
+        uses: taiki-e/setup-cross-toolchain-action@v1
+        with:
+          target: ${{ matrix.target }}
+
+      - name: Build
+        run: cargo build --release
+
+      - name: Test
+        run: cargo test --release --verbose $DOCTEST_XCOMPILE -- --test-threads 1
+
+  msrv:
+    name: Minimum Supported Rust Version
+    runs-on: ubuntu-latest
+    needs: [lints, docs]
+    env:
+      RUSTFLAGS: "-D warnings"
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Install cargo-binstall
+        uses: taiki-e/install-action@cargo-binstall
+
+      - name: Install cargo-msrv
+        run: cargo binstall --version 0.18.4 --no-confirm cargo-msrv
+
+      - name: Check MSRV
+        run: cargo msrv verify --log-target=stdout --output-format=json
+
+  semver:
+    name: Semantic Versioning
+    runs-on: ubuntu-latest
+    needs: [lints, docs]
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v5
+      - name: Check semver
+        uses: obi1kenobi/cargo-semver-checks-action@v2
+
+  min-versions:
+    name: Minimal Dependency Versions
+    runs-on: ubuntu-latest
+    needs: [lints, docs]
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v5
+
+      - name: Install nightly toolchain
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: Install cargo-hack
+        uses: taiki-e/install-action@cargo-hack
+      - name: Install cargo-minimal-versions
+        uses: taiki-e/install-action@cargo-minimal-versions
+
+      - name: Check with minimal versions
+        run: cargo minimal-versions check --workspace --ignore-private
+
+  min-versions-msrv:
+    name: Minimal Dependency Versions (MSRV)
+    runs-on: ubuntu-latest
+    needs: [lints, docs]
+    env:
+      RUSTFLAGS: "-D warnings"
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v5
+
+      - name: Install nightly toolchain
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: Install cargo-binstall
+        uses: taiki-e/install-action@cargo-binstall
+      - name: Install cargo-msrv
+        run: cargo binstall --version 0.18.4 --no-confirm cargo-msrv
+      - name: Install cargo-hack
+        uses: taiki-e/install-action@cargo-hack
+      - name: Install cargo-minimal-versions
+        uses: taiki-e/install-action@cargo-minimal-versions
+
+      - name: Determine MSRV
+        run: echo "MSRV=$(cargo msrv show --output-format=minimal)" >> $GITHUB_ENV
+
+      - name: Show MSRV
+        run: echo $MSRV
+
+      - name: Install MSRV Rust version
+        run: rustup toolchain install $MSRV
+
+      - name: Check with minimal versions
+        run: cargo +$MSRV minimal-versions check --workspace --ignore-private
+
+  lints:
+    name: Lints
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v5
+
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Run cargo fmt
+        run: cargo fmt --all -- --check
+
+      - name: Run cargo clippy
+        run: cargo clippy --all-targets -- -D warnings
+
+  docs:
+    name: Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v5
+
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Run cargo doc
+        env:
+          RUSTDOCFLAGS: "-Dwarnings"
+        run: cargo doc --no-deps
+
+  leaks:
+    name: Memory leaks
+    runs-on: ubuntu-latest
+    needs: [lints, docs]
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v5
+
+      - name: Install llvm
+        # Required to resolve symbols in sanitizer output
+        run: sudo apt-get install -y llvm
+
+      - name: Install nightly toolchain
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: Build
+        env:
+          RUSTFLAGS: "-Z sanitizer=address"
+        run: cargo build --target x86_64-unknown-linux-gnu --tests
+
+      - name: Run tests with leak sanitizer
+        env:
+          RUSTFLAGS: "-Z sanitizer=address"
+        run: cargo test
+          --target x86_64-unknown-linux-gnu --tests
+          -- --test-threads 1
+
+  release:
+    name: Publish version
+    runs-on: ubuntu-latest
+    environment: production
+    if: github.event_name == 'release'
+    needs:
+      [
+        test,
+        build-examples,
+        test-codecov,
+        msrv,
+        lints,
+        docs,
+        leaks,
+        semver,
+        min-versions,
+        min-versions-msrv,
+      ]
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v5
+
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - name: Query crate version
+        run: echo "crate_version=$(cargo metadata --format-version=1 --no-deps | python -c "import sys,json; print('v' + json.load(sys.stdin)['packages'][0]['version'])")" >> $GITHUB_ENV
+
+      - name: Query release tag version
+        run: echo "release_tag_version=${{ github.event.release.name }}" >> $GITHUB_ENV
+
+      - name: Print versions
+        run: echo "Crate - ${{ env.crate_version }}, Release - ${{ env.release_tag_version }}"
+
+      - name: Check version not empty
+        run: test -n ${{ env.crate_version }}
+
+      - name: Check matching versions
+        run: test ${{ env.crate_version }} = ${{ env.release_tag_version }}
+
+      - name: Cargo login
+        run: cargo login ${{ secrets.CRATES_IO_TOKEN }}
+
+      - name: Cargo publish
+        run: cargo publish
