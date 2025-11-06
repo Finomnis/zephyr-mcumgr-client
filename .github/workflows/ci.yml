@@ -153,13 +153,13 @@ jobs:
         run: echo "MSRV=$(cargo msrv show --output-format=minimal)" >> $GITHUB_ENV
 
       - name: Show MSRV
-        run: echo $MSRV
+        run: echo "$MSRV"
 
       - name: Install MSRV Rust version
-        run: rustup toolchain install $MSRV
+        run: rustup toolchain install "$MSRV"
 
       - name: Check with minimal versions
-        run: cargo +$MSRV minimal-versions check --workspace --ignore-private
+        run: cargo "+$MSRV" minimal-versions check --workspace --ignore-private
 
   lints:
     name: Lints
