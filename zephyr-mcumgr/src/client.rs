@@ -112,8 +112,8 @@ impl MCUmgrClient {
 
     /// Changes the communication timeout.
     ///
-    /// When the device does not respond within the set duration,
-    /// an error will be returned.
+    /// When the device does not respond to packets within the set
+    /// duration, an error will be raised.
     pub fn set_timeout(
         &mut self,
         timeout: Duration,
