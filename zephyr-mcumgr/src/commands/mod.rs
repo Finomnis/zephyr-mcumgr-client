@@ -23,7 +23,7 @@ pub struct ErrResponse {
     pub err: Option<ErrResponseV2>,
 }
 
-/// MCUmgr command
+/// An MCUmgr command that can be executed through [`Connection::execute_command`](crate::connection::Connection::execute_command).
 pub trait McuMgrCommand: Serialize {
     /// The response type of the command
     type Response: for<'a> Deserialize<'a>;
