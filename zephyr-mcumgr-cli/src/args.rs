@@ -73,5 +73,5 @@ pub enum Group {
         command: FsCommand,
     },
     /// Execute a raw SMP command
-    Raw(#[arg(flatten)] RawCommand),
+    Raw(#[command(flatten)] RawCommand),
 }
