@@ -23,14 +23,18 @@ pub struct ErrResponse {
     pub err: Option<ErrResponseV2>,
 }
 
-/// MCUmgr command
-pub trait McuMgrCommand: Serialize {
-    /// The response type of the command
+/// An MCUmgr command that can be executed through [`Connection::execute_command`](crate::connection::Connection::execute_command).
+pub trait McuMgrCommand {
+    /// the data payload type
+    type Payload: Serialize;
+    /// the response type of the command
     type Response: for<'a> Deserialize<'a>;
-    /// Whether this command is a read or write operation
-    const WRITE_OPERATION: bool;
-    /// The Group ID of the command
-    const GROUP_ID: u16;
-    /// The Command ID
-    const COMMAND_ID: u8;
+    /// whether this command is a read or write operation
+    fn is_write_operation(&self) -> bool;
+    /// the group ID of the command
+    fn group_id(&self) -> u16;
+    /// the command ID
+    fn command_id(&self) -> u8;
+    /// the data
+    fn data(&self) -> &Self::Payload;
 }

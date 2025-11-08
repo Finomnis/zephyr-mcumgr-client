@@ -21,11 +21,20 @@ pub struct FileDownloadResponse {
 }
 
 impl<'a> super::McuMgrCommand for FileDownload<'a> {
+    type Payload = Self;
     type Response = FileDownloadResponse;
-
-    const WRITE_OPERATION: bool = false;
-    const GROUP_ID: u16 = 8;
-    const COMMAND_ID: u8 = 0;
+    fn is_write_operation(&self) -> bool {
+        false
+    }
+    fn group_id(&self) -> u16 {
+        8
+    }
+    fn command_id(&self) -> u8 {
+        0
+    }
+    fn data(&self) -> &Self {
+        self
+    }
 }
 
 /// Computes how large [`FileUpload::data`] is allowed to be.
@@ -71,9 +80,18 @@ pub struct FileUploadResponse {
 }
 
 impl<'a, 'b> super::McuMgrCommand for FileUpload<'a, 'b> {
+    type Payload = Self;
     type Response = FileUploadResponse;
-
-    const WRITE_OPERATION: bool = true;
-    const GROUP_ID: u16 = 8;
-    const COMMAND_ID: u8 = 0;
+    fn is_write_operation(&self) -> bool {
+        true
+    }
+    fn group_id(&self) -> u16 {
+        8
+    }
+    fn command_id(&self) -> u8 {
+        0
+    }
+    fn data(&self) -> &Self {
+        self
+    }
 }

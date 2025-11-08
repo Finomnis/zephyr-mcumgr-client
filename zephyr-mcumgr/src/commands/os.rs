@@ -17,11 +17,20 @@ pub struct EchoResponse {
 }
 
 impl<'a> super::McuMgrCommand for Echo<'a> {
+    type Payload = Self;
     type Response = EchoResponse;
-
-    const WRITE_OPERATION: bool = true;
-    const GROUP_ID: u16 = 0;
-    const COMMAND_ID: u8 = 0;
+    fn is_write_operation(&self) -> bool {
+        true
+    }
+    fn group_id(&self) -> u16 {
+        0
+    }
+    fn command_id(&self) -> u8 {
+        0
+    }
+    fn data(&self) -> &Self {
+        self
+    }
 }
 
 /// [Task statistics](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_groups/smp_group_0.html#task-statistics-command) command
@@ -55,11 +64,20 @@ pub struct TaskStatisticsResponse {
 }
 
 impl super::McuMgrCommand for TaskStatistics {
+    type Payload = Self;
     type Response = TaskStatisticsResponse;
-
-    const WRITE_OPERATION: bool = false;
-    const GROUP_ID: u16 = 0;
-    const COMMAND_ID: u8 = 2;
+    fn is_write_operation(&self) -> bool {
+        false
+    }
+    fn group_id(&self) -> u16 {
+        0
+    }
+    fn command_id(&self) -> u8 {
+        2
+    }
+    fn data(&self) -> &Self {
+        self
+    }
 }
 
 /// [MCUmgr Parameters](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_groups/smp_group_0.html#mcumgr-parameters) command
@@ -76,9 +94,18 @@ pub struct MCUmgrParametersResponse {
 }
 
 impl super::McuMgrCommand for MCUmgrParameters {
+    type Payload = Self;
     type Response = MCUmgrParametersResponse;
-
-    const WRITE_OPERATION: bool = false;
-    const GROUP_ID: u16 = 0;
-    const COMMAND_ID: u8 = 6;
+    fn is_write_operation(&self) -> bool {
+        false
+    }
+    fn group_id(&self) -> u16 {
+        0
+    }
+    fn command_id(&self) -> u8 {
+        6
+    }
+    fn data(&self) -> &Self {
+        self
+    }
 }

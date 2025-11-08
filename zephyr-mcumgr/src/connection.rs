@@ -118,7 +118,8 @@ impl Connection {
         request: &R,
     ) -> Result<R::Response, ExecuteError> {
         let mut cursor = Cursor::new(self.transport_buffer.as_mut_slice());
-        ciborium::into_writer(request, &mut cursor).map_err(|_| ExecuteError::EncodeFailed)?;
+        ciborium::into_writer(request.data(), &mut cursor)
+            .map_err(|_| ExecuteError::EncodeFailed)?;
         let data_size = cursor.position() as usize;
         let data = &self.transport_buffer[..data_size];
 
@@ -130,20 +131,19 @@ impl Connection {
         let sequence_num = self.next_seqnum;
         self.next_seqnum = self.next_seqnum.wrapping_add(1);
 
-        self.transport.send_frame(
-            R::WRITE_OPERATION,
-            sequence_num,
-            R::GROUP_ID,
-            R::COMMAND_ID,
-            data,
-        )?;
+        let write_operation = request.is_write_operation();
+        let group_id = request.group_id();
+        let command_id = request.command_id();
+
+        self.transport
+            .send_frame(write_operation, sequence_num, group_id, command_id, data)?;
 
         let response = self.transport.receive_frame(
             &mut self.transport_buffer,
-            R::WRITE_OPERATION,
+            write_operation,
             sequence_num,
-            R::GROUP_ID,
-            R::COMMAND_ID,
+            group_id,
+            command_id,
         )?;
 
         log::debug!(
