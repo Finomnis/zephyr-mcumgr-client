@@ -31,9 +31,9 @@ pub trait McuMgrCommand {
     type Response: for<'a> Deserialize<'a>;
     /// whether this command is a read or write operation
     fn is_write_operation(&self) -> bool;
-    /// the Group ID of the command
+    /// the group ID of the command
     fn group_id(&self) -> u16;
-    /// the Command ID
+    /// the command ID
     fn command_id(&self) -> u8;
     /// the data
     fn data(&self) -> &Self::Payload;

@@ -51,7 +51,7 @@ pub struct RawCommand {
     /// Whether this is a read or write command
     #[arg(value_enum)]
     pub op: RawCommandOp,
-    /// The Group ID of the command
+    /// The group ID of the command
     pub group_id: u16,
     /// The command ID
     pub command_id: u8,
