@@ -66,11 +66,12 @@ fn cli_main() -> Result<(), CliError> {
             ),
         },
         Group::Fs { command } => match command {},
-        Group::Raw(command) => println!(
-            "{}",
-            serde_json::to_string_pretty(&client.raw_command(&command)?)
-                .map_err(CliError::JsonEncodeError)?
-        ),
+        Group::Raw(command) => {
+            let response = client.raw_command(&command)?;
+            let json_response =
+                serde_json::to_string_pretty(&response).map_err(CliError::JsonEncodeError)?;
+            println!("{json_response}")
+        }
     }
 
     Ok(())
