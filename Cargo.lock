@@ -1163,6 +1163,7 @@ name = "zephyr-mcumgr-python"
 version = "0.0.1-alpha.5"
 dependencies = [
  "pyo3",
+ "serialport",
  "zephyr-mcumgr",
 ]
 

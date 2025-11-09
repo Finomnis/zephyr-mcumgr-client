@@ -24,3 +24,4 @@ features = ["abi3-py38"]
 
 [dependencies]
 zephyr-mcumgr.workspace = true
+serialport.workspace = true
