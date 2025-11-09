@@ -17,3 +17,6 @@ pub mod connection;
 pub mod transport;
 
 pub use client::MCUmgrClient;
+
+mod enums;
+pub use enums::{MCUmgrErr, MCUmgrGroup};

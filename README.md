@@ -16,6 +16,15 @@ Specifically, it provides:
 - A CLI tool that allows most of the commands to be run via command line
 - A Python interface for the library
 
+Its primary design goals are:
+- Completeness
+  - cover all use cases regarding Zephyr's MCUmgr
+- Performance
+  - use static memory and large buffers to prioritize performance
+    over memory footprint
+  - see further down for more information regarding performance
+    optimizations required on zephyr side
+
 
 ## Usage Example
 
@@ -67,6 +76,24 @@ $ zephyr-mcumgr --serial COM42 raw read 0 0 '{"d":"Hello World!"}'
   "r": "Hello World!"
 }
 ```
+
+## Performance
+
+Zephyr's default buffer sizes are quite small and reduce the read/write performance drastically.
+
+The central most important setting is [MCUMGR_TRANSPORT_NETBUF_SIZE](https://github.com/zephyrproject-rtos/zephyr/blob/v4.2.1/subsys/mgmt/mcumgr/transport/Kconfig#L40). Its default of 384 bytes is very limiting, both for performance and as limiting factor of large responses, like `os task_statistics` or some shell commands.
+
+Be aware that changing this value also requires an increase of `MCUMGR_TRANSPORT_WORKQUEUE_STACK_SIZE`, otherwise I got overflow crashes.
+
+In practice, I found that the following values work quite well (on i.MX RT1060)
+and give me 410 KB/s read and 120 KB/s write throughput, which is an order of magnitude faster than the default settings.
+
+```kconfig
+CONFIG_MCUMGR_TRANSPORT_NETBUF_SIZE=4096
+CONFIG_MCUMGR_TRANSPORT_WORKQUEUE_STACK_SIZE=8192
+```
+
+If the experience differs on other chips, please open an issue and let me know.
 
 ## Contributions
 

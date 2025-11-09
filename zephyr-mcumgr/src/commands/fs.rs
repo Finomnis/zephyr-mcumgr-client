@@ -20,23 +20,6 @@ pub struct FileDownloadResponse {
     pub len: Option<u64>,
 }
 
-impl<'a> super::McuMgrCommand for FileDownload<'a> {
-    type Payload = Self;
-    type Response = FileDownloadResponse;
-    fn is_write_operation(&self) -> bool {
-        false
-    }
-    fn group_id(&self) -> u16 {
-        8
-    }
-    fn command_id(&self) -> u8 {
-        0
-    }
-    fn data(&self) -> &Self {
-        self
-    }
-}
-
 /// Computes how large [`FileUpload::data`] is allowed to be.
 ///
 /// Taken from Zephyr's [MCUMGR_GRP_FS_DL_CHUNK_SIZE](https://github.com/zephyrproject-rtos/zephyr/blob/v4.2.1/subsys/mgmt/mcumgr/grp/fs_mgmt/include/mgmt/mcumgr/grp/fs_mgmt/fs_mgmt_config.h#L45).
@@ -77,21 +60,4 @@ pub struct FileUpload<'a, 'b> {
 pub struct FileUploadResponse {
     /// offset of last successfully written data
     pub off: u64,
-}
-
-impl<'a, 'b> super::McuMgrCommand for FileUpload<'a, 'b> {
-    type Payload = Self;
-    type Response = FileUploadResponse;
-    fn is_write_operation(&self) -> bool {
-        true
-    }
-    fn group_id(&self) -> u16 {
-        8
-    }
-    fn command_id(&self) -> u8 {
-        0
-    }
-    fn data(&self) -> &Self {
-        self
-    }
 }

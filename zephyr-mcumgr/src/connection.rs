@@ -1,6 +1,7 @@
 use std::{fmt::Display, io::Cursor, time::Duration};
 
 use crate::{
+    MCUmgrErr, MCUmgrGroup,
     commands::{ErrResponse, ErrResponseV2, McuMgrCommand},
     transport::{ReceiveError, SendError, Transport},
 };
@@ -31,9 +32,9 @@ pub enum DeviceError {
     /// MCUmgr SMP v2 error codes
     V2 {
         /// Group id
-        group: u32,
+        group: u16,
         /// Group based error code
-        rc: u32,
+        rc: i32,
     },
 }
 
@@ -41,27 +42,14 @@ impl Display for DeviceError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             DeviceError::V1 { rc } => {
-                let err_str = match *rc {
-                    0 => "MGMT_ERR_EOK".to_string(),
-                    1 => "MGMT_ERR_EUNKNOWN".to_string(),
-                    2 => "MGMT_ERR_ENOMEM".to_string(),
-                    3 => "MGMT_ERR_EINVAL".to_string(),
-                    4 => "MGMT_ERR_ETIMEOUT".to_string(),
-                    5 => "MGMT_ERR_ENOENT".to_string(),
-                    6 => "MGMT_ERR_EBADSTATE".to_string(),
-                    7 => "MGMT_ERR_EMSGSIZE".to_string(),
-                    8 => "MGMT_ERR_ENOTSUP".to_string(),
-                    9 => "MGMT_ERR_ECORRUPT".to_string(),
-                    10 => "MGMT_ERR_EBUSY".to_string(),
-                    11 => "MGMT_ERR_EACCESSDENIED".to_string(),
-                    12 => "MGMT_ERR_UNSUPPORTED_TOO_OLD".to_string(),
-                    13 => "MGMT_ERR_UNSUPPORTED_TOO_NEW".to_string(),
-                    256.. => format!("MGMT_ERR_EPERUSER({rc})"),
-                    _ => format!("Unknown({rc})"),
-                };
-                write!(f, "{err_str}")
+                write!(f, "{}", MCUmgrErr::err_to_string(*rc))
             }
-            DeviceError::V2 { group, rc } => write!(f, "group={group},rc={rc}"),
+            DeviceError::V2 { group, rc } => write!(
+                f,
+                "group={},rc={}",
+                MCUmgrGroup::group_id_to_string(*group),
+                MCUmgrErr::err_to_string(*rc)
+            ),
         }
     }
 }

@@ -15,20 +15,3 @@ pub struct ShellCommandLineExecuteResponse {
     /// return code from shell command execution
     pub ret: i32,
 }
-
-impl<'a> super::McuMgrCommand for ShellCommandLineExecute<'a> {
-    type Payload = Self;
-    type Response = ShellCommandLineExecuteResponse;
-    fn is_write_operation(&self) -> bool {
-        true
-    }
-    fn group_id(&self) -> u16 {
-        9
-    }
-    fn command_id(&self) -> u8 {
-        0
-    }
-    fn data(&self) -> &Self {
-        self
-    }
-}
