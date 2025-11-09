@@ -18,12 +18,12 @@ Specifically, it provides:
 
 Its primary design goals are:
 - Completeness
-    - cover all usecases regarding Zephyr's MCUmgr
+  - cover all use cases regarding Zephyr's MCUmgr
 - Performance
-    - use static memory and large buffers to prioritize performance
-      over memory footprint
-    - see further down for more information regarding performance
-      optimizations required on zephyr side
+  - use static memory and large buffers to prioritize performance
+    over memory footprint
+  - see further down for more information regarding performance
+    optimizations required on zephyr side
 
 
 ## Usage Example
