@@ -37,7 +37,7 @@ jobs:
           pip install crfs --no-index --find-links dist --force-reinstall
           python -c "import crfs"
       - name: Upload wheels
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: wheels
           path: dist
@@ -64,7 +64,7 @@ jobs:
           pip install crfs --no-index --find-links dist --force-reinstall
           python -c "import crfs"
       - name: Upload wheels
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: wheels
           path: dist
@@ -92,7 +92,7 @@ jobs:
           pip install crfs --no-index --find-links dist --force-reinstall
           python -c "import crfs"
       - name: Upload wheels
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: wheels
           path: dist
@@ -128,7 +128,7 @@ jobs:
             pip3 install crfs --no-index --find-links dist/ --force-reinstall
             python3 -c "import crfs"
       - name: Upload wheels
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: wheels
           path: dist
@@ -164,7 +164,7 @@ jobs:
             pip3 install crfs --no-index --find-links /io/dist/ --force-reinstall
             python3 -c "import crfs"
       - name: Upload wheels
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: wheels
           path: dist
@@ -202,7 +202,7 @@ jobs:
             pip3 install crfs --no-index --find-links dist/ --force-reinstall
             python3 -c "import crfs"
       - name: Upload wheels
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: wheels
           path: dist
