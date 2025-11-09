@@ -11,9 +11,9 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Deserialize)]
 pub struct ErrResponseV2 {
     /// group of the group-based error code
-    pub group: u32,
+    pub group: u16,
     /// contains the index of the group-based error code
-    pub rc: u32,
+    pub rc: i32,
 }
 
 /// [SMP error message](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_protocol.html#minimal-response-smp-data)
@@ -41,6 +41,14 @@ pub trait McuMgrCommand {
     fn data(&self) -> &Self::Payload;
 }
 
+/// Implements the [`McuMgrCommand`] trait for a request/response pair.
+///
+/// # Parameters
+/// - `$request`: The request type implementing the command
+/// - `$response`: The response type for this command
+/// - `$iswrite`: Boolean literal indicating if this is a write operation
+/// - `$groupid`: The MCUmgr group ID (u16)
+/// - `$commandid`: The MCUmgr command ID (u8)
 macro_rules! impl_mcumgr_command {
     ($request:ty, $response:ty, $iswrite:literal, $groupid:literal, $commandid:literal) => {
         impl McuMgrCommand for $request {
