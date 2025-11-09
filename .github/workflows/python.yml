@@ -25,8 +25,8 @@ jobs:
           args: --release --out dist --sdist -m zephyr-mcumgr-python/Cargo.toml
       - name: Install built wheel - x86_64
         run: |
-          pip install crfs --no-index --find-links dist --force-reinstall
-          python -c "import crfs"
+          pip install zephyr_mcumgr --no-index --find-links dist --force-reinstall
+          python -c "import zephyr_mcumgr"
       - name: Build wheels - universal2
         uses: PyO3/maturin-action@v1
         with:
@@ -34,8 +34,8 @@ jobs:
           args: --release --out dist -m zephyr-mcumgr-python/Cargo.toml
       - name: Install built wheel - universal2
         run: |
-          pip install crfs --no-index --find-links dist --force-reinstall
-          python -c "import crfs"
+          pip install zephyr_mcumgr --no-index --find-links dist --force-reinstall
+          python -c "import zephyr_mcumgr"
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
@@ -61,8 +61,8 @@ jobs:
           args: --release --out dist -m zephyr-mcumgr-python/Cargo.toml
       - name: Install built wheel
         run: |
-          pip install crfs --no-index --find-links dist --force-reinstall
-          python -c "import crfs"
+          pip install zephyr_mcumgr --no-index --find-links dist --force-reinstall
+          python -c "import zephyr_mcumgr"
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
@@ -89,8 +89,8 @@ jobs:
       - name: Install built wheel
         if: matrix.target == 'x86_64'
         run: |
-          pip install crfs --no-index --find-links dist --force-reinstall
-          python -c "import crfs"
+          pip install zephyr_mcumgr --no-index --find-links dist --force-reinstall
+          python -c "import zephyr_mcumgr"
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
@@ -125,8 +125,8 @@ jobs:
             apt-get install -y --no-install-recommends python3 python3-pip
             pip3 install -U pip
           run: |
-            pip3 install crfs --no-index --find-links dist/ --force-reinstall
-            python3 -c "import crfs"
+            pip3 install zephyr_mcumgr --no-index --find-links dist/ --force-reinstall
+            python3 -c "import zephyr_mcumgr"
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
@@ -161,8 +161,8 @@ jobs:
           run: |
             apk add py3-pip
             pip3 install -U pip
-            pip3 install crfs --no-index --find-links /io/dist/ --force-reinstall
-            python3 -c "import crfs"
+            pip3 install zephyr_mcumgr --no-index --find-links /io/dist/ --force-reinstall
+            python3 -c "import zephyr_mcumgr"
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
@@ -199,8 +199,8 @@ jobs:
             apk add py3-pip
             pip3 install -U pip
           run: |
-            pip3 install crfs --no-index --find-links dist/ --force-reinstall
-            python3 -c "import crfs"
+            pip3 install zephyr_mcumgr --no-index --find-links dist/ --force-reinstall
+            python3 -c "import zephyr_mcumgr"
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
