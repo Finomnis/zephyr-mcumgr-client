@@ -3,10 +3,15 @@
 use pyo3::prelude::*;
 
 use pyo3::exceptions::PyRuntimeError;
+use pyo3_stub_gen::{
+    define_stub_info_gatherer,
+    derive::{gen_stub_pyclass, gen_stub_pymethods},
+};
 use std::error::Error;
 use std::sync::{Mutex, MutexGuard};
 use std::time::Duration;
 
+#[gen_stub_pyclass]
 #[pyclass(frozen)]
 struct MCUmgrClient {
     client: Mutex<::zephyr_mcumgr::MCUmgrClient>,
@@ -23,6 +28,7 @@ impl MCUmgrClient {
     }
 }
 
+#[gen_stub_pymethods]
 #[pymethods]
 impl MCUmgrClient {
     #[staticmethod]
@@ -49,3 +55,6 @@ mod zephyr_mcumgr {
     #[pymodule_export]
     use super::MCUmgrClient;
 }
+
+// Define a function to gather stub information.
+define_stub_info_gatherer!(stub_info);
