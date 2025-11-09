@@ -2,10 +2,11 @@
 name = "zephyr-mcumgr-python"
 description = "Python API for Zephyr's MCUmgr protocol"
 
+rust-version = "1.91"
+
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
-rust-version.workspace = true
 license.workspace = true
 readme.workspace = true
 repository.workspace = true
