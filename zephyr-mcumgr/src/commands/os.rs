@@ -16,23 +16,6 @@ pub struct EchoResponse {
     pub r: String,
 }
 
-impl<'a> super::McuMgrCommand for Echo<'a> {
-    type Payload = Self;
-    type Response = EchoResponse;
-    fn is_write_operation(&self) -> bool {
-        true
-    }
-    fn group_id(&self) -> u16 {
-        0
-    }
-    fn command_id(&self) -> u8 {
-        0
-    }
-    fn data(&self) -> &Self {
-        self
-    }
-}
-
 /// [Task statistics](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_groups/smp_group_0.html#task-statistics-command) command
 #[derive(Debug, Serialize)]
 pub struct TaskStatistics;
@@ -63,23 +46,6 @@ pub struct TaskStatisticsResponse {
     pub tasks: HashMap<String, TaskStatisticsEntry>,
 }
 
-impl super::McuMgrCommand for TaskStatistics {
-    type Payload = Self;
-    type Response = TaskStatisticsResponse;
-    fn is_write_operation(&self) -> bool {
-        false
-    }
-    fn group_id(&self) -> u16 {
-        0
-    }
-    fn command_id(&self) -> u8 {
-        2
-    }
-    fn data(&self) -> &Self {
-        self
-    }
-}
-
 /// [MCUmgr Parameters](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_groups/smp_group_0.html#mcumgr-parameters) command
 #[derive(Debug, Serialize)]
 pub struct MCUmgrParameters;
@@ -91,21 +57,4 @@ pub struct MCUmgrParametersResponse {
     pub buf_size: u32,
     /// Number of SMP buffers supported
     pub buf_count: u32,
-}
-
-impl super::McuMgrCommand for MCUmgrParameters {
-    type Payload = Self;
-    type Response = MCUmgrParametersResponse;
-    fn is_write_operation(&self) -> bool {
-        false
-    }
-    fn group_id(&self) -> u16 {
-        0
-    }
-    fn command_id(&self) -> u8 {
-        6
-    }
-    fn data(&self) -> &Self {
-        self
-    }
 }

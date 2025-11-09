@@ -40,3 +40,45 @@ pub trait McuMgrCommand {
     /// the data
     fn data(&self) -> &Self::Payload;
 }
+
+macro_rules! impl_mcumgr_command {
+    ($request:ty, $response:ty, $iswrite:literal, $groupid:literal, $commandid:literal) => {
+        impl McuMgrCommand for $request {
+            type Payload = Self;
+            type Response = $response;
+            fn is_write_operation(&self) -> bool {
+                $iswrite
+            }
+            fn group_id(&self) -> u16 {
+                $groupid
+            }
+            fn command_id(&self) -> u8 {
+                $commandid
+            }
+            fn data(&self) -> &Self {
+                self
+            }
+        }
+    };
+}
+
+impl_mcumgr_command!(os::Echo<'_>, os::EchoResponse, true, 0, 0);
+impl_mcumgr_command!(os::TaskStatistics, os::TaskStatisticsResponse, false, 0, 2);
+impl_mcumgr_command!(
+    os::MCUmgrParameters,
+    os::MCUmgrParametersResponse,
+    false,
+    0,
+    6
+);
+
+impl_mcumgr_command!(fs::FileUpload<'_, '_>, fs::FileUploadResponse, true, 8, 0);
+impl_mcumgr_command!(fs::FileDownload<'_>, fs::FileDownloadResponse, false, 8, 0);
+
+impl_mcumgr_command!(
+    shell::ShellCommandLineExecute<'_>,
+    shell::ShellCommandLineExecuteResponse,
+    true,
+    9,
+    0
+);
