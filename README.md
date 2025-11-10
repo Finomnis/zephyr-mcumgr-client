@@ -24,7 +24,7 @@ Its primary design goals are:
   - use static memory and large buffers to prioritize performance
     over memory footprint
   - see further down for more information regarding performance
-    optimizations required on zephyr side
+    optimizations required on Zephyr side
 
 
 ## Usage Example
