@@ -9,6 +9,27 @@ on:
 name: Python
 
 jobs:
+  check_stubs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install dependencies
+        run: sudo apt-get install -y libudev-dev
+
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Generate python stubs
+        working-directory: zephyr-mcumgr-python
+        run: cargo build
+
+      - name: Generate python stubs
+        working-directory: zephyr-mcumgr-python
+        run: cargo run --bin stub_gen
+
+      - run: git diff --exit-code
+
   macos:
     runs-on: macos-latest
     steps:
