@@ -127,6 +127,17 @@ impl MCUmgrClient {
     /// * `command_id` - The command ID
     /// * `data` - Anything that can be serialized as a proper packet payload.
     ///
+    /// # Example
+    ///
+    /// ```python
+    /// client.raw_command(True, 0, 0, {"d": "Hello!"})
+    /// ```
+    ///
+    /// Response:
+    /// ```none
+    /// {'r': 'Hello!'}
+    /// ```
+    ///
     pub fn raw_command<'py>(
         &self,
         py: Python<'py>,
