@@ -2,6 +2,7 @@
 # ruff: noqa: E501, F401
 
 import builtins
+import datetime
 import typing
 
 @typing.final
@@ -20,10 +21,50 @@ class MCUmgrClient:
         * `baud_rate` - The baud rate of the serial port.
         * `timeout_ms` - The communication timeout, in ms.
         """
+    def set_frame_size(self, smp_frame_size: builtins.int) -> None:
+        r"""
+        Configures the maximum SMP frame size that we can send to the device.
+        
+        Must not exceed [`MCUMGR_TRANSPORT_NETBUF_SIZE`](https://github.com/zephyrproject-rtos/zephyr/blob/v4.2.1/subsys/mgmt/mcumgr/transport/Kconfig#L40),
+        otherwise we might crash the device.
+        """
+    def use_auto_frame_size(self) -> None:
+        r"""
+        Configures the maximum SMP frame size that we can send to the device automatically
+        by reading the value of [`MCUMGR_TRANSPORT_NETBUF_SIZE`](https://github.com/zephyrproject-rtos/zephyr/blob/v4.2.1/subsys/mgmt/mcumgr/transport/Kconfig#L40)
+        from the device.
+        """
+    def set_timeout(self, timeout: datetime.timedelta) -> None:
+        r"""
+        Changes the communication timeout.
+        
+        When the device does not respond to packets within the set
+        duration, an error will be raised.
+        """
     def os_echo(self, msg: builtins.str) -> builtins.str:
         r"""
         Sends a message to the device and expects the same message back as response.
         
         This can be used as a sanity check for whether the device is connected and responsive.
+        """
+    def shell_execute(self, argv: typing.Sequence[builtins.str]) -> tuple[builtins.int, builtins.str]:
+        r"""
+        Run a shell command.
+        
+         # Arguments
+        
+        * `argv` - The shell command to be executed.
+        
+        # Return
+        
+        A tuple of (returncode, stdout) produced by the command execution.
+        """
+    def raw_command(self, command: builtins.int) -> builtins.int:
+        r"""
+        Execute a raw [`commands::McuMgrCommand`].
+        
+        Only returns if no error happened, so the
+        user does not need to check for an `rc` or `err`
+        field in the response.
         """
 
