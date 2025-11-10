@@ -34,7 +34,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.10"
           architecture: x64
@@ -70,7 +70,7 @@ jobs:
         target: [x64, x86]
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.10"
           architecture: ${{ matrix.target }}
@@ -97,7 +97,7 @@ jobs:
         target: [x86_64, i686]
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.10"
           architecture: x64
@@ -125,7 +125,7 @@ jobs:
         target: [aarch64, armv7, s390x, ppc64le, ppc64]
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.10"
       - name: Build wheels
@@ -163,7 +163,7 @@ jobs:
           - i686-unknown-linux-musl
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.10"
           architecture: x64
@@ -201,7 +201,7 @@ jobs:
             arch: armv7
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.10"
       - name: Build wheels
@@ -238,7 +238,7 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           name: wheels
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.10"
       - name: Publish to PyPI
