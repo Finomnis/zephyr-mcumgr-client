@@ -2,6 +2,7 @@
 
 use pyo3::prelude::*;
 
+use ::zephyr_mcumgr::commands;
 use pyo3::exceptions::PyRuntimeError;
 use pyo3_stub_gen::{
     define_stub_info_gatherer,
@@ -53,12 +54,69 @@ impl MCUmgrClient {
         })
     }
 
+    /// Configures the maximum SMP frame size that we can send to the device.
+    ///
+    /// Must not exceed [`MCUMGR_TRANSPORT_NETBUF_SIZE`](https://github.com/zephyrproject-rtos/zephyr/blob/v4.2.1/subsys/mgmt/mcumgr/transport/Kconfig#L40),
+    /// otherwise we might crash the device.
+    fn set_frame_size(&self, smp_frame_size: usize) -> PyResult<()> {
+        Ok(self.lock()?.set_frame_size(smp_frame_size))
+    }
+
+    /// Configures the maximum SMP frame size that we can send to the device automatically
+    /// by reading the value of [`MCUMGR_TRANSPORT_NETBUF_SIZE`](https://github.com/zephyrproject-rtos/zephyr/blob/v4.2.1/subsys/mgmt/mcumgr/transport/Kconfig#L40)
+    /// from the device.
+    pub fn use_auto_frame_size(&self) -> PyResult<()> {
+        let res = self.lock()?.use_auto_frame_size();
+        convert_error(res)
+    }
+
+    /// Changes the communication timeout.
+    ///
+    /// When the device does not respond to packets within the set
+    /// duration, an error will be raised.
+    pub fn set_timeout(&self, timeout: Duration) -> PyResult<()> {
+        let res = self.lock()?.set_timeout(timeout);
+        // Chenanigans because Box<dyn Error> does not implement Error
+        let res = match &res {
+            Ok(()) => Ok(()),
+            Err(e) => Err(&**e),
+        };
+        convert_error(res)
+    }
+
     /// Sends a message to the device and expects the same message back as response.
     ///
     /// This can be used as a sanity check for whether the device is connected and responsive.
     fn os_echo(&self, msg: &str) -> PyResult<String> {
         let res = self.lock()?.os_echo(msg);
         convert_error(res)
+    }
+
+    // TODO: file download
+    // TODO: file upload
+
+    /// Run a shell command.
+    ///
+    ///  # Arguments
+    ///
+    /// * `argv` - The shell command to be executed.
+    ///
+    /// # Return
+    ///
+    /// A tuple of (returncode, stdout) produced by the command execution.
+    pub fn shell_execute(&self, argv: Vec<String>) -> PyResult<(i32, String)> {
+        let res = self.lock()?.shell_execute(&argv);
+        convert_error(res)
+    }
+
+    /// Execute a raw [`commands::McuMgrCommand`].
+    ///
+    /// Only returns if no error happened, so the
+    /// user does not need to check for an `rc` or `err`
+    /// field in the response.
+    pub fn raw_command(&self, command: i32) -> PyResult<i32> {
+        //self.connection.execute_command(command)
+        Ok(42)
     }
 }
 
