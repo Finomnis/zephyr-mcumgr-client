@@ -21,13 +21,8 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Generate python stubs
-        uses: PyO3/maturin-action@v1
-        with:
-          command: build
-          args: --release
-          working-directory: zephyr-mcumgr-python
-
-      - run: ls target/*
+        working-directory: zephyr-mcumgr-python
+        run: cargo run --bin stub_gen
 
       - run: git diff --exit-code
 
