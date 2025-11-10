@@ -6,7 +6,24 @@ import typing
 
 @typing.final
 class MCUmgrClient:
+    r"""
+    A high level client for Zephyr's MCUmgr SMP functionality
+    """
     @staticmethod
-    def new_from_serial(serial: builtins.str, baud_rate: builtins.int = 115200, timeout_ms: builtins.int = 500) -> MCUmgrClient: ...
-    def os_echo(self, msg: builtins.str) -> builtins.str: ...
+    def new_from_serial(serial: builtins.str, baud_rate: builtins.int = 115200, timeout_ms: builtins.int = 500) -> MCUmgrClient:
+        r"""
+        Creates a new serial port based Zephyr MCUmgr SMP client.
+        
+         # Arguments
+        
+        * `serial` - The identifier of the serial device. (Windows: `COMxx`, Linux: `/dev/ttyXX`)
+        * `baud_rate` - The baud rate of the serial port.
+        * `timeout_ms` - The communication timeout, in ms.
+        """
+    def os_echo(self, msg: builtins.str) -> builtins.str:
+        r"""
+        Sends a message to the device and expects the same message back as response.
+        
+        This can be used as a sanity check for whether the device is connected and responsive.
+        """
 

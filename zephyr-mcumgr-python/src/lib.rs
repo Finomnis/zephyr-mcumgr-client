@@ -11,6 +11,7 @@ use std::error::Error;
 use std::sync::{Mutex, MutexGuard};
 use std::time::Duration;
 
+/// A high level client for Zephyr's MCUmgr SMP functionality
 #[gen_stub_pyclass]
 #[pyclass(frozen)]
 struct MCUmgrClient {
@@ -31,6 +32,14 @@ impl MCUmgrClient {
 #[gen_stub_pymethods]
 #[pymethods]
 impl MCUmgrClient {
+    /// Creates a new serial port based Zephyr MCUmgr SMP client.
+    ///
+    ///  # Arguments
+    ///
+    /// * `serial` - The identifier of the serial device. (Windows: `COMxx`, Linux: `/dev/ttyXX`)
+    /// * `baud_rate` - The baud rate of the serial port.
+    /// * `timeout_ms` - The communication timeout, in ms.
+    ///
     #[staticmethod]
     #[pyo3(signature = (serial, baud_rate=115200, timeout_ms=500))]
     fn new_from_serial(serial: &str, baud_rate: u32, timeout_ms: u64) -> PyResult<Self> {
@@ -44,6 +53,9 @@ impl MCUmgrClient {
         })
     }
 
+    /// Sends a message to the device and expects the same message back as response.
+    ///
+    /// This can be used as a sanity check for whether the device is connected and responsive.
     fn os_echo(&self, msg: &str) -> PyResult<String> {
         let res = self.lock()?.os_echo(msg);
         convert_error(res)

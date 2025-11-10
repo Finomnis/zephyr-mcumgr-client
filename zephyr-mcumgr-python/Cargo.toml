@@ -4,11 +4,12 @@ description = "Python API for Zephyr's MCUmgr protocol"
 
 rust-version = "1.91"
 
+readme = "README.md"
+
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
 license.workspace = true
-readme.workspace = true
 repository.workspace = true
 keywords.workspace = true
 

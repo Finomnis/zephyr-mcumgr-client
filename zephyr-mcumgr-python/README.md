@@ -7,15 +7,9 @@
 [![Build Status](https://img.shields.io/github/actions/workflow/status/Finomnis/zephyr-mcumgr-client/ci.yml?branch=main)](https://github.com/Finomnis/zephyr-mcumgr-client/actions/workflows/ci.yml?query=branch%3Amain)
 [![docs.rs](https://img.shields.io/docsrs/zephyr-mcumgr)](https://docs.rs/zephyr-mcumgr)
 
-This crate provides a full Rust-based software suite for Zephyr's [MCUmgr protocol](https://docs.zephyrproject.org/latest/services/device_mgmt/mcumgr.html).
+This library provides a Rust-based Python API for Zephyr's [MCUmgr protocol](https://docs.zephyrproject.org/latest/services/device_mgmt/mcumgr.html).
 
 It might be compatible with other MCUmgr/SMP-based systems, but it is developed with Zephyr in mind.
-
-Specifically, it provides:
-
-- A Rust library that supports all Zephyr MCUmgr commands
-- A CLI tool that allows most of the commands to be run via command line
-- A Python interface for the library
 
 Its primary design goals are:
 - Completeness
@@ -29,60 +23,24 @@ Its primary design goals are:
 
 ## Usage Example
 
-```rust no_run
-use zephyr_mcumgr::MCUmgrClient;
-use std::time::Duration;
+```python no_run
+from zephyr_mcumgr import MCUmgrClient
 
-fn main() {
-    let serial = serialport::new("COM42", 115200).open().unwrap();
-
-    let mut client = MCUmgrClient::new_from_serial(serial);
-    client.set_timeout(Duration::from_millis(500));
-    client.use_auto_frame_size().unwrap();
-
-    println!("{:?}", client.os_echo("Hello world!").unwrap());
-}
+client = MCUmgrClient.new_from_serial("COM42")
+print(client.os_echo("Hello world!"))
 ```
 
 ```none
-"Hello world!"
-```
-
-## Usage as a library
-
-To use this library in your project, enter your project directory and run:
-
-```none
-cargo add zephyr-mcumgr
-```
-
-## Installation as command line tool
-
-```none
-cargo install zephyr-mcumgr-cli
-```
-
-### Usage example
-
-```none
-$ zephyr-mcumgr --serial COM42 os echo "Hello world!"
 Hello world!
 ```
 
-Or as a [raw command](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_groups/smp_group_0.html#echo-command):
-
-```none
-$ zephyr-mcumgr --serial COM42 raw read 0 0 '{"d":"Hello World!"}'
-{
-  "r": "Hello World!"
-}
-```
+The API of `MCUmgrClient` closely follows the one of its [Rust counterpart](https://docs.rs/zephyr-mcumgr/0.0.1/zephyr_mcumgr/client/struct.MCUmgrClient.html).
 
 ## Performance
 
 Zephyr's default buffer sizes are quite small and reduce the read/write performance drastically.
 
-The central most important setting is [`MCUMGR_TRANSPORT_NETBUF_SIZE`](https://github.com/zephyrproject-rtos/zephyr/blob/v4.2.1/subsys/mgmt/mcumgr/transport/Kconfig#L40). Its default of 384 bytes is very limiting, both for performance and as limiting factor of large responses, like `os task_statistics` or some shell commands.
+The central most important setting is [`MCUMGR_TRANSPORT_NETBUF_SIZE`](https://github.com/zephyrproject-rtos/zephyr/blob/v4.2.1/subsys/mgmt/mcumgr/transport/Kconfig#L40). Its default of 384 bytes is very limiting, both for performance and as limiting factor of large responses, like `os_task_statistics()` or some shell commands.
 
 Be aware that changing this value also requires an increase of `MCUMGR_TRANSPORT_WORKQUEUE_STACK_SIZE`, otherwise I got overflow crashes.
 
