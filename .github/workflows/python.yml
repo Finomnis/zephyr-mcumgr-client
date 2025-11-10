@@ -140,9 +140,9 @@ jobs:
           install: |
             apt-get update
             apt-get install -y --no-install-recommends python3 python3-pip
-            pip3 install -U pip
+            pip3 install -U pip --break-system-packages
           run: |
-            pip3 install zephyr_mcumgr --no-index --find-links dist/ --force-reinstall
+            pip3 install zephyr_mcumgr --no-index --find-links dist/ --force-reinstall --break-system-packages
             python3 -c "import zephyr_mcumgr"
       - name: Upload wheels
         uses: actions/upload-artifact@v4
@@ -214,9 +214,9 @@ jobs:
           githubToken: ${{ github.token }}
           install: |
             apk add py3-pip
-            pip3 install -U pip
+            pip3 install -U pip --break-system-packages
           run: |
-            pip3 install zephyr_mcumgr --no-index --find-links dist/ --force-reinstall
+            pip3 install zephyr_mcumgr --no-index --find-links dist/ --force-reinstall --break-system-packages
             python3 -c "import zephyr_mcumgr"
       - name: Upload wheels
         uses: actions/upload-artifact@v4
