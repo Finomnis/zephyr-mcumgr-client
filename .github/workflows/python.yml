@@ -142,6 +142,7 @@ jobs:
             apt-get install -y --no-install-recommends python3 python3-pip
             pip3 install -U pip
           run: |
+            ls -la /github/workspace/dist/
             pip3 install zephyr_mcumgr --no-index --find-links /github/workspace/dist/ --force-reinstall
             python3 -c "import zephyr_mcumgr"
       - name: Upload wheels
