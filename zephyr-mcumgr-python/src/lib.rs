@@ -76,7 +76,7 @@ impl MCUmgrClient {
     ///
     /// When the device does not respond to packets within the set
     /// duration, an error will be raised.
-    pub fn set_timeout(&self, timeout_ms: u64) -> PyResult<()> {
+    pub fn set_timeout_ms(&self, timeout_ms: u64) -> PyResult<()> {
         let res = self.lock()?.set_timeout(Duration::from_millis(timeout_ms));
         // Chenanigans because Box<dyn Error> does not implement Error
         let res = match &res {
