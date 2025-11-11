@@ -27,23 +27,13 @@ jobs:
       - run: git diff --exit-code
 
   macos:
-    runs-on: macos-13
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
         with:
           python-version: "3.10"
-          architecture: x64
       - uses: dtolnay/rust-toolchain@stable
-      - name: Build wheels - x86_64
-        uses: PyO3/maturin-action@v1
-        with:
-          target: x86_64
-          args: --release --out dist --sdist -m zephyr-mcumgr-python/Cargo.toml
-      - name: Install built wheel - x86_64
-        run: |
-          pip install zephyr_mcumgr --no-index --find-links dist --force-reinstall
-          python -c "import zephyr_mcumgr"
       - name: Build wheels - universal2
         uses: PyO3/maturin-action@v1
         with:
