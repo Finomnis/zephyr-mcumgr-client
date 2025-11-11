@@ -47,10 +47,10 @@ pub trait McuMgrCommand {
 /// - `$request`: The request type implementing the command
 /// - `$response`: The response type for this command
 /// - `$iswrite`: Boolean literal indicating if this is a write operation
-/// - `$groupid`: The MCUmgr group ID (u16)
+/// - `$groupid`: The MCUmgr group
 /// - `$commandid`: The MCUmgr command ID (u8)
 macro_rules! impl_mcumgr_command {
-    ($request:ty, $response:ty, $iswrite:literal, $groupid:literal, $commandid:literal) => {
+    ($request:ty, $response:ty, $iswrite:literal, $groupid:ident, $commandid:literal) => {
         impl McuMgrCommand for $request {
             type Payload = Self;
             type Response = $response;
@@ -58,7 +58,7 @@ macro_rules! impl_mcumgr_command {
                 $iswrite
             }
             fn group_id(&self) -> u16 {
-                $groupid
+                $crate::MCUmgrGroup::$groupid as u16
             }
             fn command_id(&self) -> u8 {
                 $commandid
@@ -70,23 +70,41 @@ macro_rules! impl_mcumgr_command {
     };
 }
 
-impl_mcumgr_command!(os::Echo<'_>, os::EchoResponse, true, 0, 0);
-impl_mcumgr_command!(os::TaskStatistics, os::TaskStatisticsResponse, false, 0, 2);
+impl_mcumgr_command!(os::Echo<'_>, os::EchoResponse, true, MGMT_GROUP_ID_OS, 0);
+impl_mcumgr_command!(
+    os::TaskStatistics,
+    os::TaskStatisticsResponse,
+    false,
+    MGMT_GROUP_ID_OS,
+    2
+);
 impl_mcumgr_command!(
     os::MCUmgrParameters,
     os::MCUmgrParametersResponse,
     false,
-    0,
+    MGMT_GROUP_ID_OS,
     6
 );
 
-impl_mcumgr_command!(fs::FileUpload<'_, '_>, fs::FileUploadResponse, true, 8, 0);
-impl_mcumgr_command!(fs::FileDownload<'_>, fs::FileDownloadResponse, false, 8, 0);
+impl_mcumgr_command!(
+    fs::FileUpload<'_, '_>,
+    fs::FileUploadResponse,
+    true,
+    MGMT_GROUP_ID_FS,
+    0
+);
+impl_mcumgr_command!(
+    fs::FileDownload<'_>,
+    fs::FileDownloadResponse,
+    false,
+    MGMT_GROUP_ID_FS,
+    0
+);
 
 impl_mcumgr_command!(
     shell::ShellCommandLineExecute<'_>,
     shell::ShellCommandLineExecuteResponse,
     true,
-    9,
+    MGMT_GROUP_ID_SHELL,
     0
 );
