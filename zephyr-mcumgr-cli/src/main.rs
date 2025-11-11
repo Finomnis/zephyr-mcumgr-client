@@ -50,10 +50,10 @@ pub enum CliError {
     #[diagnostic(code(zephyr_mcumgr::cli::output))]
     OutputWriteFailed(#[source] std::io::Error),
     #[error("File upload failed")]
-    #[diagnostic(code(zephyr_mcumgr::cli::file_upload_failed))]
+    #[diagnostic(code(zephyr_mcumgr::cli::file_upload))]
     FileUploadFailed(#[from] FileUploadError),
     #[error("File download failed")]
-    #[diagnostic(code(zephyr_mcumgr::cli::file_download_failed))]
+    #[diagnostic(code(zephyr_mcumgr::cli::file_download))]
     FileDownloadFailed(#[from] FileDownloadError),
 }
 
