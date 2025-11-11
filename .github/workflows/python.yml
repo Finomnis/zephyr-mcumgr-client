@@ -39,10 +39,6 @@ jobs:
         with:
           target: x86_64
           args: --release --out dist --sdist -m zephyr-mcumgr-python/Cargo.toml
-      - name: Install built wheel - x86_64
-        run: |
-          pip install zephyr_mcumgr --no-index --find-links dist --force-reinstall
-          python -c "import zephyr_mcumgr"
       - name: Build wheels - universal2
         uses: PyO3/maturin-action@v1
         with:
