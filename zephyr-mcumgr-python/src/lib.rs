@@ -101,6 +101,7 @@ impl MCUmgrClient {
     ///
     /// * `name` - The full path of the file on the device.
     /// * `progress` - A callable object that takes (transmitted, total) values as parameters.
+    ///                Any return value is ignored. Raising an exception aborts the operation.
     ///
     /// # Return
     ///
@@ -137,6 +138,7 @@ impl MCUmgrClient {
     /// * `name` - The full path of the file on the device.
     /// * `data` - The file content.
     /// * `progress` - A callable object that takes (transmitted, total) values as parameters.
+    ///                Any return value is ignored. Raising an exception aborts the operation.
     ///
     /// # Performance
     ///
