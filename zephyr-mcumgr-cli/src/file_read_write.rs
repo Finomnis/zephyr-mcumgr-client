@@ -26,12 +26,12 @@ pub fn write_output_file(filename: &str, data: &[u8]) -> Result<(), CliError> {
     if filename == "-" {
         std::io::stdout()
             .lock()
-            .write_all(&data)
+            .write_all(data)
             .map_err(CliError::OutputWriteFailed)
     } else {
         File::create(filename)
             .map_err(CliError::OutputWriteFailed)?
-            .write_all(&data)
+            .write_all(data)
             .map_err(CliError::OutputWriteFailed)
     }
 }
