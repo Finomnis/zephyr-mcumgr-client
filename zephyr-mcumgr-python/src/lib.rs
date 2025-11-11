@@ -1,6 +1,6 @@
 #![forbid(unsafe_code)]
 
-use pyo3::prelude::*;
+use pyo3::{prelude::*, types::PyBytes};
 
 use pyo3::exceptions::PyRuntimeError;
 use pyo3_stub_gen::{
@@ -95,8 +95,103 @@ impl MCUmgrClient {
         convert_error(res)
     }
 
-    // TODO: file download
-    // TODO: file upload
+    /// Load a file from the device.
+    ///
+    ///  # Arguments
+    ///
+    /// * `name` - The full path of the file on the device.
+    /// * `progress` - A callable object that takes (transmitted, total) values as parameters.
+    ///                Any return value is ignored. Raising an exception aborts the operation.
+    ///
+    /// # Return
+    ///
+    /// The file content
+    ///
+    /// # Performance
+    ///
+    /// Downloading files with Zephyr's default parameters is slow.
+    /// You want to increase [`MCUMGR_TRANSPORT_NETBUF_SIZE`](https://github.com/zephyrproject-rtos/zephyr/blob/v4.2.1/subsys/mgmt/mcumgr/transport/Kconfig#L40)
+    /// to maybe `4096` or larger.
+    #[pyo3(signature = (name, progress=None))]
+    pub fn fs_file_download<'py>(
+        &self,
+        py: Python<'py>,
+        name: &str,
+        progress: Option<Bound<'py, PyAny>>,
+    ) -> PyResult<Bound<'py, PyBytes>> {
+        let mut data = vec![];
+
+        let mut cb_error = None;
+
+        let res = if let Some(progress) = progress {
+            let mut cb = |current, total| match progress.call((current, total), None) {
+                Ok(_) => true,
+                Err(e) => {
+                    cb_error = Some(e);
+                    false
+                }
+            };
+            self.lock()?
+                .fs_file_download(name, &mut data, Some(&mut cb))
+        } else {
+            self.lock()?.fs_file_download(name, &mut data, None)
+        };
+
+        if let Some(cb_error) = cb_error {
+            return Err(cb_error);
+        }
+
+        convert_error(res)?;
+        Ok(PyBytes::new(py, &data))
+    }
+
+    /// Write a file to the device.
+    ///
+    ///  # Arguments
+    ///
+    /// * `name` - The full path of the file on the device.
+    /// * `data` - The file content.
+    /// * `progress` - A callable object that takes (transmitted, total) values as parameters.
+    ///                Any return value is ignored. Raising an exception aborts the operation.
+    ///
+    /// # Performance
+    ///
+    /// Uploading files with Zephyr's default parameters is slow.
+    /// You want to increase [`MCUMGR_TRANSPORT_NETBUF_SIZE`](https://github.com/zephyrproject-rtos/zephyr/blob/v4.2.1/subsys/mgmt/mcumgr/transport/Kconfig#L40)
+    /// to maybe `4096` and then enable larger chunking through either [`MCUmgrClient::set_frame_size`]
+    /// or [`MCUmgrClient::use_auto_frame_size`].
+    #[pyo3(signature = (name, data, progress=None))]
+    pub fn fs_file_upload<'py>(
+        &self,
+        name: &str,
+        data: &Bound<'py, PyBytes>,
+        progress: Option<Bound<'py, PyAny>>,
+    ) -> PyResult<()> {
+        let bytes: &[u8] = data.extract()?;
+
+        let mut cb_error = None;
+
+        let res = if let Some(progress) = progress {
+            let mut cb = |current, total| match progress.call((current, total), None) {
+                Ok(_) => true,
+                Err(e) => {
+                    cb_error = Some(e);
+                    false
+                }
+            };
+            self.lock()?
+                .fs_file_upload(name, bytes, bytes.len() as u64, Some(&mut cb))
+        } else {
+            self.lock()?
+                .fs_file_upload(name, bytes, bytes.len() as u64, None)
+        };
+
+        if let Some(cb_error) = cb_error {
+            return Err(cb_error);
+        }
+
+        convert_error(res)
+    }
 
     /// Run a shell command.
     ///
