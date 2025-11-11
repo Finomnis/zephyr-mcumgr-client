@@ -46,6 +46,40 @@ class MCUmgrClient:
         
         This can be used as a sanity check for whether the device is connected and responsive.
         """
+    def fs_file_download(self, name: builtins.str) -> bytes:
+        r"""
+        Load a file from the device.
+        
+         # Arguments
+        
+        * `name` - The full path of the file on the device.
+        
+        # Return
+        
+        The file content
+        
+        # Performance
+        
+        Downloading files with Zephyr's default parameters is slow.
+        You want to increase [`MCUMGR_TRANSPORT_NETBUF_SIZE`](https://github.com/zephyrproject-rtos/zephyr/blob/v4.2.1/subsys/mgmt/mcumgr/transport/Kconfig#L40)
+        to maybe `4096` or larger.
+        """
+    def fs_file_upload(self, name: builtins.str, data: bytes) -> None:
+        r"""
+        Write a file to the device.
+        
+         # Arguments
+        
+        * `name` - The full path of the file on the device.
+        * `data` - The file content.
+        
+        # Performance
+        
+        Uploading files with Zephyr's default parameters is slow.
+        You want to increase [`MCUMGR_TRANSPORT_NETBUF_SIZE`](https://github.com/zephyrproject-rtos/zephyr/blob/v4.2.1/subsys/mgmt/mcumgr/transport/Kconfig#L40)
+        to maybe `4096` and then enable larger chunking through either [`MCUmgrClient::set_frame_size`]
+        or [`MCUmgrClient::use_auto_frame_size`].
+        """
     def shell_execute(self, argv: typing.Sequence[builtins.str]) -> tuple[builtins.int, builtins.str]:
         r"""
         Run a shell command.

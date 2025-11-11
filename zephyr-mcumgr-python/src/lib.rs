@@ -1,6 +1,6 @@
 #![forbid(unsafe_code)]
 
-use pyo3::prelude::*;
+use pyo3::{prelude::*, types::PyBytes};
 
 use pyo3::exceptions::PyRuntimeError;
 use pyo3_stub_gen::{
@@ -95,8 +95,50 @@ impl MCUmgrClient {
         convert_error(res)
     }
 
-    // TODO: file download
-    // TODO: file upload
+    /// Load a file from the device.
+    ///
+    ///  # Arguments
+    ///
+    /// * `name` - The full path of the file on the device.
+    ///
+    /// # Return
+    ///
+    /// The file content
+    ///
+    /// # Performance
+    ///
+    /// Downloading files with Zephyr's default parameters is slow.
+    /// You want to increase [`MCUMGR_TRANSPORT_NETBUF_SIZE`](https://github.com/zephyrproject-rtos/zephyr/blob/v4.2.1/subsys/mgmt/mcumgr/transport/Kconfig#L40)
+    /// to maybe `4096` or larger.
+    pub fn fs_file_download<'py>(
+        &self,
+        py: Python<'py>,
+        name: &str,
+    ) -> PyResult<Bound<'py, PyBytes>> {
+        let mut data = vec![];
+        let res = self.lock()?.fs_file_download(name, &mut data);
+        convert_error(res)?;
+        Ok(PyBytes::new(py, &data))
+    }
+
+    /// Write a file to the device.
+    ///
+    ///  # Arguments
+    ///
+    /// * `name` - The full path of the file on the device.
+    /// * `data` - The file content.
+    ///
+    /// # Performance
+    ///
+    /// Uploading files with Zephyr's default parameters is slow.
+    /// You want to increase [`MCUMGR_TRANSPORT_NETBUF_SIZE`](https://github.com/zephyrproject-rtos/zephyr/blob/v4.2.1/subsys/mgmt/mcumgr/transport/Kconfig#L40)
+    /// to maybe `4096` and then enable larger chunking through either [`MCUmgrClient::set_frame_size`]
+    /// or [`MCUmgrClient::use_auto_frame_size`].
+    pub fn fs_file_upload<'py>(&self, name: &str, data: &Bound<'py, PyBytes>) -> PyResult<()> {
+        let bytes: &[u8] = data.extract()?;
+        let res = self.lock()?.fs_file_upload(name, bytes, bytes.len() as u64);
+        convert_error(res)
+    }
 
     /// Run a shell command.
     ///
