@@ -17,7 +17,7 @@ use clap::Parser;
 use miette::Diagnostic;
 use thiserror::Error;
 use zephyr_mcumgr::{
-    MCUmgrClient,
+    Errno, MCUmgrClient,
     client::{FileDownloadError, FileUploadError},
     connection::ExecuteError,
 };
@@ -40,7 +40,7 @@ pub enum CliError {
     #[error("Json encode failed")]
     #[diagnostic(code(zephyr_mcumgr::cli::json_encode))]
     JsonEncodeError(#[source] serde_json::Error),
-    #[error("Shell command returned exit code '{0}'")]
+    #[error("Shell command returned error exit code: {}", Errno::errno_to_string(*.0))]
     #[diagnostic(code(zephyr_mcumgr::cli::shell_exit_code))]
     ShellExitCode(i32),
     #[error("Failed to read the input data")]
@@ -108,8 +108,11 @@ fn cli_main() -> Result<(), CliError> {
         Group::Shell { argv } => {
             let (returncode, output) = client.shell_execute(&argv)?;
             println!("{output}");
-            if returncode != 0 {
+            if returncode < 0 {
                 return Err(CliError::ShellExitCode(returncode));
+            } else if returncode > 0 {
+                println!();
+                println!("Exit code: {returncode}")
             }
         }
         Group::Raw(command) => {
