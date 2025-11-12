@@ -8,6 +8,9 @@
 pub mod client;
 pub use client::MCUmgrClient;
 
+mod errno;
+pub use errno::Errno;
+
 /// [MCUmgr command group](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_protocol.html#specifications-of-management-groups-supported-by-zephyr) definitions
 pub mod commands;
 
