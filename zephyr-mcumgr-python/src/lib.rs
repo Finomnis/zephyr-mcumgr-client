@@ -199,9 +199,20 @@ impl MCUmgrClient {
     ///
     /// # Return
     ///
-    /// A tuple of (returncode, stdout) produced by the command execution.
-    pub fn shell_execute(&self, argv: Vec<String>) -> PyResult<(i32, String)> {
-        self.lock()?.shell_execute(&argv).map_err(err_to_pyerr)
+    /// The command output
+    ///
+    pub fn shell_execute(&self, argv: Vec<String>) -> PyResult<String> {
+        let (exitcode, data) = self.lock()?.shell_execute(&argv).map_err(err_to_pyerr)?;
+
+        if exitcode < 0 {
+            return Err(PyRuntimeError::new_err(format!(
+                "Shell command returned error exit code: {}\n{}",
+                ::zephyr_mcumgr::Errno::errno_to_string(exitcode),
+                data
+            )));
+        }
+
+        Ok(data)
     }
 
     /// Execute a raw MCUmgrCommand.
