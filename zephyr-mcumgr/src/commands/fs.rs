@@ -1,4 +1,10 @@
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
+use serde_repr::Deserialize_repr;
+use strum_macros::Display;
+
+use super::is_default;
 
 /// [File Download](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_groups/smp_group_8.html#file-download) command
 #[derive(Debug, Serialize)]
@@ -61,3 +67,97 @@ pub struct FileUploadResponse {
     /// offset of last successfully written data
     pub off: u64,
 }
+
+/// [File Status](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_groups/smp_group_8.html#file-status) command
+#[derive(Debug, Serialize)]
+pub struct FileStatus<'a> {
+    /// absolute path to a file
+    pub name: &'a str,
+}
+
+/// Response for [`FileStatus`] command
+#[derive(Debug, Deserialize)]
+pub struct FileStatusResponse {
+    /// length of file (in bytes)
+    pub len: u64,
+}
+
+/// [File Hash/Checksum](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_groups/smp_group_8.html#file-hash-checksum) command
+#[derive(Debug, Serialize)]
+pub struct FileHashChecksum<'a, 'b> {
+    /// absolute path to a file
+    pub name: &'a str,
+    /// type of hash/checksum to perform or None to use default
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub r#type: Option<&'b str>,
+    /// offset to start hash/checksum calculation at
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub off: u64,
+    /// maximum length of data to read from file to generate hash/checksum with (optional, full file size if None)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub len: Option<u64>,
+}
+
+/// Response for [`FileHashChecksum`] command
+#[derive(Debug, Deserialize)]
+pub struct FileHashChecksumResponse {
+    /// type of hash/checksum that was performed
+    pub r#type: String,
+    /// offset that hash/checksum calculation started at
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub off: u64,
+    /// length of input data used for hash/checksum generation (in bytes)
+    pub len: u64,
+    /// output hash/checksum
+    pub output: FileHashChecksumData,
+}
+
+/// Hash data of [`FileHashChecksumResponse`]
+#[derive(Debug, Deserialize)]
+#[serde(untagged)]
+pub enum FileHashChecksumData {
+    /// hash bytes
+    #[serde(with = "serde_bytes")]
+    Hash(Box<[u8]>),
+    /// checksum integer
+    Checksum(u32),
+}
+
+/// [Supported file hash/checksum types](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_groups/smp_group_8.html#supported-file-hash-checksum-types) command
+#[derive(Debug, Serialize)]
+pub struct SupportedFileHashChecksumTypes;
+
+/// Response for [`SupportedFileHashChecksumTypes`] command
+#[derive(Debug, Deserialize)]
+pub struct SupportedFileHashChecksumTypesResponse {
+    /// names and properties of the hash/checksum types
+    pub r#types: HashMap<String, SupportedFileHashChecksumTypesEntry>,
+}
+
+/// Data format of the hash/checksum type
+#[derive(Display, Deserialize_repr, Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(u8)]
+#[allow(non_camel_case_types)]
+pub enum SupportedFileHashChecksumDataFormat {
+    /// Data is a number
+    Numerical = 0,
+    /// Data is a bytes array
+    ByteArray = 1,
+}
+
+/// Properties of a hash/checksum algorithm
+#[derive(Debug, Deserialize)]
+pub struct SupportedFileHashChecksumTypesEntry {
+    /// format that the hash/checksum returns
+    pub format: SupportedFileHashChecksumDataFormat,
+    /// size (in bytes) of output hash/checksum response
+    pub size: u32,
+}
+
+/// [File Close](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_groups/smp_group_8.html#file-close) command
+#[derive(Debug, Serialize)]
+pub struct FileClose;
+
+/// Response for [`FileClose`] command
+#[derive(Debug, Deserialize)]
+pub struct FileCloseResponse;
