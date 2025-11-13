@@ -27,3 +27,4 @@ log.workspace = true
 thiserror.workspace = true
 serde_json.workspace = true
 indicatif.workspace = true
+ciborium.workspace = true
