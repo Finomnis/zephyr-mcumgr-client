@@ -1,8 +1,8 @@
 use crate::args::RawCommandOp;
 
 impl zephyr_mcumgr::commands::McuMgrCommand for crate::args::RawCommand {
-    type Payload = serde_json::Value;
-    type Response = serde_json::Value;
+    type Payload = ciborium::Value;
+    type Response = ciborium::Value;
 
     fn is_write_operation(&self) -> bool {
         match self.op {
@@ -19,7 +19,7 @@ impl zephyr_mcumgr::commands::McuMgrCommand for crate::args::RawCommand {
         self.command_id
     }
 
-    fn data(&self) -> &serde_json::Value {
+    fn data(&self) -> &ciborium::Value {
         &self.data
     }
 }

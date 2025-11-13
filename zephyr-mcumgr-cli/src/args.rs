@@ -61,7 +61,7 @@ pub enum RawCommandOp {
     Write,
 }
 
-fn parse_raw_command_data(s: &str) -> Result<serde_json::Value, serde_json::Error> {
+fn parse_raw_command_data(s: &str) -> Result<ciborium::Value, serde_json::Error> {
     serde_json::from_str(s)
 }
 
@@ -76,7 +76,7 @@ pub struct RawCommand {
     pub command_id: u8,
     /// The payload of the command, as JSON
     #[arg(value_parser=parse_raw_command_data, default_value = "{}")]
-    pub data: serde_json::Value,
+    pub data: ciborium::Value,
 }
 
 #[derive(Debug, Subcommand)]

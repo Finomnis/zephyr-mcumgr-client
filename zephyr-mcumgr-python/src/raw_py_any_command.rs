@@ -6,7 +6,7 @@ pub struct RawPyAnyCommand {
     write_operation: bool,
     group_id: u16,
     command_id: u8,
-    data: serde_json::Value,
+    data: ciborium::Value,
 }
 
 impl RawPyAnyCommand {
@@ -27,15 +27,15 @@ impl RawPyAnyCommand {
 
     pub fn convert_result<'py>(
         py: Python<'py>,
-        result: serde_json::Value,
+        result: ciborium::Value,
     ) -> PyResult<Bound<'py, PyAny>> {
         to_pyobject(py, &result).map_err(Into::into)
     }
 }
 
 impl McuMgrCommand for RawPyAnyCommand {
-    type Payload = serde_json::Value;
-    type Response = serde_json::Value;
+    type Payload = ciborium::Value;
+    type Response = ciborium::Value;
 
     fn is_write_operation(&self) -> bool {
         self.write_operation
