@@ -157,7 +157,3 @@ pub struct SupportedFileHashChecksumTypesEntry {
 /// [File Close](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_groups/smp_group_8.html#file-close) command
 #[derive(Debug, Serialize)]
 pub struct FileClose;
-
-/// Response for [`FileClose`] command
-#[derive(Debug, Deserialize)]
-pub struct FileCloseResponse;

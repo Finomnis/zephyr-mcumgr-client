@@ -1,5 +1,7 @@
 use std::{
+    collections::HashMap,
     io::{self, Read, Write},
+    ops::RangeBounds,
     time::Duration,
 };
 
@@ -258,6 +260,68 @@ impl MCUmgrClient {
         }
 
         Ok(())
+    }
+
+    /// Queries the file status
+    pub fn fs_file_status(
+        &mut self,
+        name: impl AsRef<str>,
+    ) -> Result<commands::fs::FileStatusResponse, ExecuteError> {
+        self.connection.execute_command(&commands::fs::FileStatus {
+            name: name.as_ref(),
+        })
+    }
+
+    /// Computes the hash/checksum of a file
+    ///
+    /// For available algorithms, see [`fs_supported_hash_checksum_types`].
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - The absolute path of the file on the device
+    /// * `algorithm` - The hash/checksum algorithm to use, or default if None
+    /// * `range` - Which bytes of the file to process. `..` for all bytes.
+    ///
+    pub fn fs_file_hash_checksum(
+        &mut self,
+        name: impl AsRef<str>,
+        algorithm: Option<impl AsRef<str>>,
+        range: impl RangeBounds<u64>,
+    ) -> Result<commands::fs::FileHashChecksumResponse, ExecuteError> {
+        let offset = match range.start_bound() {
+            std::ops::Bound::Included(pos) => *pos,
+            std::ops::Bound::Excluded(pos) => *pos + 1,
+            std::ops::Bound::Unbounded => 0,
+        };
+
+        let length = match range.end_bound() {
+            std::ops::Bound::Included(pos) => Some(*pos + 1 - offset),
+            std::ops::Bound::Excluded(pos) => Some(*pos - offset),
+            std::ops::Bound::Unbounded => None,
+        };
+
+        self.connection
+            .execute_command(&commands::fs::FileHashChecksum {
+                name: name.as_ref(),
+                r#type: algorithm.as_ref().map(AsRef::as_ref),
+                off: offset,
+                len: length,
+            })
+    }
+
+    /// Queries which hash/checksum algorithms are available on the target
+    pub fn fs_supported_hash_checksum_types(
+        &mut self,
+    ) -> Result<HashMap<String, commands::fs::SupportedFileHashChecksumTypesEntry>, ExecuteError>
+    {
+        self.connection
+            .execute_command(&commands::fs::SupportedFileHashChecksumTypes)
+            .map(|val| val.types)
+    }
+
+    /// Close all device files MCUmgr has currently open
+    pub fn fs_file_close(&mut self) -> Result<(), ExecuteError> {
+        self.connection.execute_command(&commands::fs::FileClose)
     }
 
     /// Run a shell command.
