@@ -288,17 +288,7 @@ impl MCUmgrClient {
         algorithm: Option<impl AsRef<str>>,
         range: impl RangeBounds<u64>,
     ) -> Result<commands::fs::FileHashChecksumResponse, ExecuteError> {
-        let offset = match range.start_bound() {
-            std::ops::Bound::Included(pos) => *pos,
-            std::ops::Bound::Excluded(pos) => *pos + 1,
-            std::ops::Bound::Unbounded => 0,
-        };
-
-        let length = match range.end_bound() {
-            std::ops::Bound::Included(pos) => Some((*pos + 1).saturating_sub(offset)),
-            std::ops::Bound::Excluded(pos) => Some(pos.saturating_sub(offset)),
-            std::ops::Bound::Unbounded => None,
-        };
+        let (offset, length) = compute_offset_length_from_range(range);
 
         self.connection
             .execute_command(&commands::fs::FileHashChecksum {
@@ -350,4 +340,25 @@ impl MCUmgrClient {
     ) -> Result<T::Response, ExecuteError> {
         self.connection.execute_command(command)
     }
+}
+
+/// Takes a range and computes a tuple of `(offset, length)`.
+///
+/// `length` can be `None` to indicate the entire file.
+fn compute_offset_length_from_range(range: impl RangeBounds<u64>) -> (u64, Option<u64>) {
+    let offset = match range.start_bound() {
+        std::ops::Bound::Included(pos) => *pos,
+        std::ops::Bound::Excluded(&u64::MAX) => return (0, Some(0)),
+        std::ops::Bound::Excluded(pos) => *pos + 1,
+        std::ops::Bound::Unbounded => 0,
+    };
+
+    let length = match range.end_bound() {
+        std::ops::Bound::Included(&u64::MAX) => None,
+        std::ops::Bound::Included(pos) => Some((*pos + 1).saturating_sub(offset)),
+        std::ops::Bound::Excluded(pos) => Some(pos.saturating_sub(offset)),
+        std::ops::Bound::Unbounded => None,
+    };
+
+    (offset, length)
 }
