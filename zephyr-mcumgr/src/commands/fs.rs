@@ -84,7 +84,7 @@ pub struct FileStatusResponse {
 
 /// [File Hash/Checksum](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_groups/smp_group_8.html#file-hash-checksum) command
 #[derive(Debug, Serialize)]
-pub struct FileHashChecksum<'a, 'b> {
+pub struct FileChecksum<'a, 'b> {
     /// absolute path to a file
     pub name: &'a str,
     /// type of hash/checksum to perform or None to use default
@@ -98,9 +98,9 @@ pub struct FileHashChecksum<'a, 'b> {
     pub len: Option<u64>,
 }
 
-/// Response for [`FileHashChecksum`] command
+/// Response for [`FileChecksum`] command
 #[derive(Debug, Deserialize)]
-pub struct FileHashChecksumResponse {
+pub struct FileChecksumResponse {
     /// type of hash/checksum that was performed
     pub r#type: String,
     /// offset that hash/checksum calculation started at
@@ -109,13 +109,13 @@ pub struct FileHashChecksumResponse {
     /// length of input data used for hash/checksum generation (in bytes)
     pub len: u64,
     /// output hash/checksum
-    pub output: FileHashChecksumData,
+    pub output: FileChecksumData,
 }
 
-/// Hash data of [`FileHashChecksumResponse`]
+/// Hash data of [`FileChecksumResponse`]
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
-pub enum FileHashChecksumData {
+pub enum FileChecksumData {
     /// hash bytes
     #[serde(with = "serde_bytes")]
     Hash(Box<[u8]>),
@@ -125,20 +125,20 @@ pub enum FileHashChecksumData {
 
 /// [Supported file hash/checksum types](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_groups/smp_group_8.html#supported-file-hash-checksum-types) command
 #[derive(Debug, Serialize)]
-pub struct SupportedFileHashChecksumTypes;
+pub struct SupportedFileChecksumTypes;
 
-/// Response for [`SupportedFileHashChecksumTypes`] command
+/// Response for [`SupportedFileChecksumTypes`] command
 #[derive(Debug, Deserialize)]
-pub struct SupportedFileHashChecksumTypesResponse {
+pub struct SupportedFileChecksumTypesResponse {
     /// names and properties of the hash/checksum types
-    pub r#types: HashMap<String, SupportedFileHashChecksumTypesEntry>,
+    pub r#types: HashMap<String, FileChecksumProperties>,
 }
 
 /// Data format of the hash/checksum type
 #[derive(Display, Deserialize_repr, Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(u8)]
 #[allow(non_camel_case_types)]
-pub enum SupportedFileHashChecksumDataFormat {
+pub enum FileChecksumDataFormat {
     /// Data is a number
     Numerical = 0,
     /// Data is a bytes array
@@ -147,9 +147,9 @@ pub enum SupportedFileHashChecksumDataFormat {
 
 /// Properties of a hash/checksum algorithm
 #[derive(Debug, Deserialize)]
-pub struct SupportedFileHashChecksumTypesEntry {
+pub struct FileChecksumProperties {
     /// format that the hash/checksum returns
-    pub format: SupportedFileHashChecksumDataFormat,
+    pub format: FileChecksumDataFormat,
     /// size (in bytes) of output hash/checksum response
     pub size: u32,
 }

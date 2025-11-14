@@ -6,7 +6,7 @@ import enum
 import typing
 
 @typing.final
-class FileHashChecksum:
+class FileChecksum:
     r"""
     Return value of [`MCUmgrClient::fs_file_hash_checksum`].
     """
@@ -32,6 +32,22 @@ class FileHashChecksum:
         """
 
 @typing.final
+class FileChecksumProperties:
+    r"""
+    Properties of a hash/checksum algorithm
+    """
+    @property
+    def format(self) -> FileChecksumDataFormat:
+        r"""
+        format that the hash/checksum returns
+        """
+    @property
+    def size(self) -> builtins.int:
+        r"""
+        size (in bytes) of output hash/checksum response
+        """
+
+@typing.final
 class FileStatus:
     r"""
     Return value of [`MCUmgrClient::fs_file_status`].
@@ -40,22 +56,6 @@ class FileStatus:
     def length(self) -> builtins.int:
         r"""
         length of file (in bytes)
-        """
-
-@typing.final
-class HashChecksumProperties:
-    r"""
-    Properties of a hash/checksum algorithm
-    """
-    @property
-    def format(self) -> HashChecksumDataFormat:
-        r"""
-        format that the hash/checksum returns
-        """
-    @property
-    def size(self) -> builtins.int:
-        r"""
-        size (in bytes) of output hash/checksum response
         """
 
 @typing.final
@@ -142,7 +142,7 @@ class MCUmgrClient:
         r"""
         Queries the file status
         """
-    def fs_file_hash_checksum(self, name: builtins.str, algorithm: typing.Optional[builtins.str] = None, offset: builtins.int = 0, length: typing.Optional[builtins.int] = None) -> FileHashChecksum:
+    def fs_file_checksum(self, name: builtins.str, algorithm: typing.Optional[builtins.str] = None, offset: builtins.int = 0, length: typing.Optional[builtins.int] = None) -> FileChecksum:
         r"""
         Computes the hash/checksum of a file
         
@@ -155,7 +155,7 @@ class MCUmgrClient:
         * `offset` - How many bytes of the file to skip
         * `length` - How many bytes to read after `offset`. None for the entire file.
         """
-    def fs_supported_hash_checksum_types(self) -> builtins.dict[builtins.str, HashChecksumProperties]:
+    def fs_supported_checksum_types(self) -> builtins.dict[builtins.str, FileChecksumProperties]:
         r"""
         Queries which hash/checksum algorithms are available on the target
         """
@@ -206,7 +206,7 @@ class MCUmgrClient:
         """
 
 @typing.final
-class HashChecksumDataFormat(enum.Enum):
+class FileChecksumDataFormat(enum.Enum):
     r"""
     Data format of the hash/checksum type
     """

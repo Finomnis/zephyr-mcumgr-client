@@ -282,15 +282,15 @@ impl MCUmgrClient {
     /// * `offset` - How many bytes of the file to skip
     /// * `length` - How many bytes to read after `offset`. None for the entire file.
     ///
-    pub fn fs_file_hash_checksum(
+    pub fn fs_file_checksum(
         &mut self,
         name: impl AsRef<str>,
         algorithm: Option<impl AsRef<str>>,
         offset: u64,
         length: Option<u64>,
-    ) -> Result<commands::fs::FileHashChecksumResponse, ExecuteError> {
+    ) -> Result<commands::fs::FileChecksumResponse, ExecuteError> {
         self.connection
-            .execute_command(&commands::fs::FileHashChecksum {
+            .execute_command(&commands::fs::FileChecksum {
                 name: name.as_ref(),
                 r#type: algorithm.as_ref().map(AsRef::as_ref),
                 off: offset,
@@ -299,12 +299,11 @@ impl MCUmgrClient {
     }
 
     /// Queries which hash/checksum algorithms are available on the target
-    pub fn fs_supported_hash_checksum_types(
+    pub fn fs_supported_checksum_types(
         &mut self,
-    ) -> Result<HashMap<String, commands::fs::SupportedFileHashChecksumTypesEntry>, ExecuteError>
-    {
+    ) -> Result<HashMap<String, commands::fs::FileChecksumProperties>, ExecuteError> {
         self.connection
-            .execute_command(&commands::fs::SupportedFileHashChecksumTypes)
+            .execute_command(&commands::fs::SupportedFileChecksumTypes)
             .map(|val| val.types)
     }
 

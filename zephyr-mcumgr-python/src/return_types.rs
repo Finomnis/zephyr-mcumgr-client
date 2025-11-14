@@ -20,7 +20,7 @@ impl From<commands::fs::FileStatusResponse> for FileStatus {
 /// Return value of [`MCUmgrClient::fs_file_hash_checksum`].
 #[gen_stub_pyclass]
 #[pyclass(frozen)]
-pub struct FileHashChecksum {
+pub struct FileChecksum {
     /// type of hash/checksum that was performed
     #[pyo3(name = "type", get)]
     pub r#type: String,
@@ -34,14 +34,14 @@ pub struct FileHashChecksum {
     #[pyo3(get)]
     pub output: Py<PyBytes>,
 }
-impl FileHashChecksum {
+impl FileChecksum {
     pub(crate) fn from_response<'py>(
         py: Python<'py>,
-        value: commands::fs::FileHashChecksumResponse,
+        value: commands::fs::FileChecksumResponse,
     ) -> Self {
         let output = match value.output {
-            commands::fs::FileHashChecksumData::Hash(data) => PyBytes::new(py, &data).unbind(),
-            commands::fs::FileHashChecksumData::Checksum(data) => {
+            commands::fs::FileChecksumData::Hash(data) => PyBytes::new(py, &data).unbind(),
+            commands::fs::FileChecksumData::Checksum(data) => {
                 PyBytes::new(py, &data.to_be_bytes()).unbind()
             }
         };
@@ -58,7 +58,7 @@ impl FileHashChecksum {
 #[gen_stub_pyclass_enum]
 #[pyclass(frozen, eq, eq_int)]
 #[derive(Copy, Clone, Eq, PartialEq)]
-pub enum HashChecksumDataFormat {
+pub enum FileChecksumDataFormat {
     /// Data is a number
     Numerical = 0,
     /// Data is a bytes array
@@ -68,23 +68,23 @@ pub enum HashChecksumDataFormat {
 /// Properties of a hash/checksum algorithm
 #[gen_stub_pyclass]
 #[pyclass(frozen)]
-pub struct HashChecksumProperties {
+pub struct FileChecksumProperties {
     /// format that the hash/checksum returns
     #[pyo3(get)]
-    pub format: HashChecksumDataFormat,
+    pub format: FileChecksumDataFormat,
     /// size (in bytes) of output hash/checksum response
     #[pyo3(get)]
     pub size: u32,
 }
-impl From<commands::fs::SupportedFileHashChecksumTypesEntry> for HashChecksumProperties {
-    fn from(value: commands::fs::SupportedFileHashChecksumTypesEntry) -> Self {
+impl From<commands::fs::FileChecksumProperties> for FileChecksumProperties {
+    fn from(value: commands::fs::FileChecksumProperties) -> Self {
         Self {
             format: match value.format {
-                commands::fs::SupportedFileHashChecksumDataFormat::Numerical => {
-                    HashChecksumDataFormat::Numerical
+                commands::fs::FileChecksumDataFormat::Numerical => {
+                    FileChecksumDataFormat::Numerical
                 }
-                commands::fs::SupportedFileHashChecksumDataFormat::ByteArray => {
-                    HashChecksumDataFormat::ByteArray
+                commands::fs::FileChecksumDataFormat::ByteArray => {
+                    FileChecksumDataFormat::ByteArray
                 }
             },
             size: value.size,

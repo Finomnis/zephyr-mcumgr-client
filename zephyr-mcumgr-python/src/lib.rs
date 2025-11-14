@@ -214,30 +214,28 @@ impl MCUmgrClient {
     /// * `length` - How many bytes to read after `offset`. None for the entire file.
     ///
     #[pyo3(signature = (name, algorithm=None, offset=0, length=None))]
-    pub fn fs_file_hash_checksum<'py>(
+    pub fn fs_file_checksum<'py>(
         &self,
         py: Python<'py>,
         name: &str,
         algorithm: Option<&str>,
         offset: u64,
         length: Option<u64>,
-    ) -> PyResult<FileHashChecksum> {
+    ) -> PyResult<FileChecksum> {
         self.lock()?
-            .fs_file_hash_checksum(name, algorithm, offset, length)
-            .map(|val| FileHashChecksum::from_response(py, val))
+            .fs_file_checksum(name, algorithm, offset, length)
+            .map(|val| FileChecksum::from_response(py, val))
             .map_err(err_to_pyerr)
     }
 
     /// Queries which hash/checksum algorithms are available on the target
-    pub fn fs_supported_hash_checksum_types(
-        &self,
-    ) -> PyResult<HashMap<String, HashChecksumProperties>> {
+    pub fn fs_supported_checksum_types(&self) -> PyResult<HashMap<String, FileChecksumProperties>> {
         self.lock()?
-            .fs_supported_hash_checksum_types()
+            .fs_supported_checksum_types()
             .map(|val| {
                 let iter = val
                     .into_iter()
-                    .map(|(key, value)| (key, HashChecksumProperties::from(value)));
+                    .map(|(key, value)| (key, FileChecksumProperties::from(value)));
                 iter.collect()
             })
             .map_err(err_to_pyerr)

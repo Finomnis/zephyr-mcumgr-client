@@ -84,8 +84,8 @@ impl_mcumgr_command!((read,  MGMT_GROUP_ID_OS, 6): os::MCUmgrParameters => os::M
 impl_mcumgr_command!((write, MGMT_GROUP_ID_FS, 0): fs::FileUpload<'_, '_> => fs::FileUploadResponse);
 impl_mcumgr_command!((read,  MGMT_GROUP_ID_FS, 0): fs::FileDownload<'_> => fs::FileDownloadResponse);
 impl_mcumgr_command!((read,  MGMT_GROUP_ID_FS, 1): fs::FileStatus<'_> => fs::FileStatusResponse);
-impl_mcumgr_command!((read,  MGMT_GROUP_ID_FS, 2): fs::FileHashChecksum<'_, '_> => fs::FileHashChecksumResponse);
-impl_mcumgr_command!((read,  MGMT_GROUP_ID_FS, 3): fs::SupportedFileHashChecksumTypes => fs::SupportedFileHashChecksumTypesResponse);
+impl_mcumgr_command!((read,  MGMT_GROUP_ID_FS, 2): fs::FileChecksum<'_, '_> => fs::FileChecksumResponse);
+impl_mcumgr_command!((read,  MGMT_GROUP_ID_FS, 3): fs::SupportedFileChecksumTypes => fs::SupportedFileChecksumTypesResponse);
 impl_mcumgr_command!((write, MGMT_GROUP_ID_FS, 4): fs::FileClose => ());
 
 impl_mcumgr_command!((write, MGMT_GROUP_ID_SHELL, 0): shell::ShellCommandLineExecute<'_> => shell::ShellCommandLineExecuteResponse);
