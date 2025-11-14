@@ -123,6 +123,16 @@ pub enum FileChecksumData {
     Checksum(u32),
 }
 
+impl FileChecksumData {
+    /// Convert to hex string
+    pub fn hex(&self) -> String {
+        match self {
+            FileChecksumData::Hash(data) => data.iter().map(|val| format!("{val:02x}")).collect(),
+            FileChecksumData::Checksum(value) => format!("{value:08x}"),
+        }
+    }
+}
+
 /// [Supported file hash/checksum types](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_groups/smp_group_8.html#supported-file-hash-checksum-types) command
 #[derive(Debug, Serialize)]
 pub struct SupportedFileChecksumTypes;

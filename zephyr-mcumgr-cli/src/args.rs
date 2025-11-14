@@ -25,6 +25,10 @@ pub struct App {
     #[arg(short, long)]
     pub verbose: bool,
 
+    /// Print command results as JSON
+    #[arg(long)]
+    pub json: bool,
+
     /// Command group
     #[command(subcommand)]
     pub group: Group,
@@ -41,13 +45,6 @@ pub enum OsCommand {
 
 #[derive(Debug, Subcommand)]
 pub enum FsCommand {
-    /// Uploads a file to the device
-    Upload {
-        /// The file to copy. '-' for stdin.
-        local: String,
-        /// The target path on the device.
-        remote: String,
-    },
     /// Downloads a file from the device
     Download {
         /// The file path on the device.
@@ -55,6 +52,37 @@ pub enum FsCommand {
         /// The target path. '-' for stdout.
         local: String,
     },
+    /// Uploads a file to the device
+    Upload {
+        /// The file to copy. '-' for stdin.
+        local: String,
+        /// The target path on the device.
+        remote: String,
+    },
+    /// Shows information about a file
+    Status {
+        /// The path of the file on the device
+        name: String,
+    },
+    /// Computes the checksum of a file
+    Checksum {
+        /// The path of the file on the device
+        name: String,
+        /// The checksum algorithm to use
+        /// For more info, see `fs supported-checksums`
+        #[arg(verbatim_doc_comment)]
+        algo: Option<String>,
+        /// How many byte in the file to skip
+        #[arg(long, default_value_t = 0)]
+        offset: u64,
+        /// How much bytes to read from the file; if not specified, read all
+        #[arg(long)]
+        length: Option<u64>,
+    },
+    /// Shows supported checksum algorithms
+    SupportedChecksums,
+    /// Closes all files currently opened by MCUmgr
+    Close,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
