@@ -25,7 +25,7 @@ pub struct App {
     #[arg(short, long)]
     pub verbose: bool,
 
-    /// Print command results as JSON
+    /// Print command results as JSON, if possible
     #[arg(long)]
     pub json: bool,
 
