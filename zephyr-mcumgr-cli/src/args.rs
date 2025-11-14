@@ -59,7 +59,7 @@ pub enum FsCommand {
         /// The target path on the device.
         remote: String,
     },
-    /// Shows information about a file
+    /// Shows informations about a file
     Status {
         /// The path of the file on the device
         name: String,
@@ -72,7 +72,7 @@ pub enum FsCommand {
         /// For more info, see `fs supported-checksums`
         #[arg(verbatim_doc_comment)]
         algo: Option<String>,
-        /// How many byte in the file to skip
+        /// How many bytes in the file to skip
         #[arg(long, default_value_t = 0)]
         offset: u64,
         /// How much bytes to read from the file; if not specified, read all
