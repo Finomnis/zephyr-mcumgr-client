@@ -9,7 +9,7 @@ use ::zephyr_mcumgr::commands;
 pub struct FileStatus {
     /// length of file (in bytes)
     #[pyo3(get)]
-    length: u64,
+    pub length: u64,
 }
 impl From<commands::fs::FileStatusResponse> for FileStatus {
     fn from(value: commands::fs::FileStatusResponse) -> Self {
@@ -17,7 +17,7 @@ impl From<commands::fs::FileStatusResponse> for FileStatus {
     }
 }
 
-/// Return value of [`MCUmgrClient::fs_file_hash_checksum`].
+/// Return value of [`MCUmgrClient::fs_file_checksum`].
 #[gen_stub_pyclass]
 #[pyclass(frozen)]
 pub struct FileChecksum {
