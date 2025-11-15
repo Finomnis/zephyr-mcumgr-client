@@ -72,8 +72,6 @@ impl EchoSerial {
             assert_eq!(Some(20), self.input_buffer.pop_front());
         }
 
-        println!("{}", String::from_utf8(data.clone()).unwrap());
-
         let data = self.process_message(&data);
 
         self.output_buffer.push_back(6);
