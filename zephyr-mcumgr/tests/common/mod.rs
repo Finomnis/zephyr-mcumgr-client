@@ -48,17 +48,23 @@ pub(crate) struct EchoSerial {
     output_buffer: VecDeque<u8>,
 }
 
+const FRAME_START_1: u8 = 6;
+const FRAME_START_2: u8 = 9;
+const FRAME_START_CONT_1: u8 = 4;
+const FRAME_START_CONT_2: u8 = 20;
+const FRAME_END: u8 = 0x0a;
+
 impl EchoSerial {
     fn process_input_data(&mut self) {
         let mut data = vec![];
 
-        assert_eq!(Some(6), self.input_buffer.pop_front());
-        assert_eq!(Some(9), self.input_buffer.pop_front());
+        assert_eq!(Some(FRAME_START_1), self.input_buffer.pop_front());
+        assert_eq!(Some(FRAME_START_2), self.input_buffer.pop_front());
 
         loop {
             loop {
                 let next = self.input_buffer.pop_front().unwrap();
-                if next == 0x0a {
+                if next == FRAME_END {
                     break;
                 }
                 data.push(next);
@@ -68,23 +74,23 @@ impl EchoSerial {
                 break;
             }
 
-            assert_eq!(Some(4), self.input_buffer.pop_front());
-            assert_eq!(Some(20), self.input_buffer.pop_front());
+            assert_eq!(Some(FRAME_START_CONT_1), self.input_buffer.pop_front());
+            assert_eq!(Some(FRAME_START_CONT_2), self.input_buffer.pop_front());
         }
 
         let data = self.process_message(&data);
 
-        self.output_buffer.push_back(6);
-        self.output_buffer.push_back(9);
+        self.output_buffer.push_back(FRAME_START_1);
+        self.output_buffer.push_back(FRAME_START_2);
         for chunk in data.chunks(4) {
             for elem in chunk {
                 self.output_buffer.push_back(*elem);
             }
-            self.output_buffer.push_back(0x0a);
-            self.output_buffer.push_back(4);
-            self.output_buffer.push_back(20);
+            self.output_buffer.push_back(FRAME_END);
+            self.output_buffer.push_back(FRAME_START_CONT_1);
+            self.output_buffer.push_back(FRAME_START_CONT_2);
         }
-        self.output_buffer.push_back(0x0a);
+        self.output_buffer.push_back(FRAME_END);
     }
 
     fn process_message(&self, data: &[u8]) -> Vec<u8> {
