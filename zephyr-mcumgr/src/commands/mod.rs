@@ -5,10 +5,13 @@ pub mod os;
 /// [Shell management](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_groups/smp_group_9.html) group commands
 pub mod shell;
 
+mod macros;
+use macros::impl_mcumgr_command;
+
 use serde::{Deserialize, Serialize};
 
 /// SMP version 2 group based error message
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Eq, PartialEq)]
 pub struct ErrResponseV2 {
     /// group of the group-based error code
     pub group: u16,
@@ -17,7 +20,7 @@ pub struct ErrResponseV2 {
 }
 
 /// [SMP error message](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_protocol.html#minimal-response-smp-data)
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Eq, PartialEq)]
 pub struct ErrResponse {
     /// SMP version 1 error code
     pub rc: Option<i32>,
@@ -46,38 +49,7 @@ fn is_default<T: Default + PartialEq>(val: &T) -> bool {
     val == &T::default()
 }
 
-/// Implements the [`McuMgrCommand`] trait for a request/response pair.
-///
-/// # Parameters
-/// - `$request`: The request type implementing the command
-/// - `$response`: The response type for this command
-/// - `$iswrite`: Boolean literal indicating if this is a write operation
-/// - `$groupid`: The MCUmgr group
-/// - `$commandid`: The MCUmgr command ID (u8)
-macro_rules! impl_mcumgr_command {
-    (@direction read) => {false};
-    (@direction write) => {true};
-    (($direction:tt, $groupid:ident, $commandid:literal): $request:ty => $response:ty) => {
-        impl McuMgrCommand for $request {
-            type Payload = Self;
-            type Response = $response;
-            fn is_write_operation(&self) -> bool {
-                impl_mcumgr_command!(@direction $direction)
-            }
-            fn group_id(&self) -> u16 {
-                $crate::MCUmgrGroup::$groupid as u16
-            }
-            fn command_id(&self) -> u8 {
-                $commandid
-            }
-            fn data(&self) -> &Self {
-                self
-            }
-        }
-    };
-}
-
-impl_mcumgr_command!((write, MGMT_GROUP_ID_OS, 0): os::Echo<'_> => os::EchoResponse);
+impl_mcumgr_command!((read, MGMT_GROUP_ID_OS, 0): os::Echo<'_> => os::EchoResponse);
 impl_mcumgr_command!((read,  MGMT_GROUP_ID_OS, 2): os::TaskStatistics => os::TaskStatisticsResponse);
 impl_mcumgr_command!((read,  MGMT_GROUP_ID_OS, 6): os::MCUmgrParameters => os::MCUmgrParametersResponse);
 
@@ -86,6 +58,84 @@ impl_mcumgr_command!((read,  MGMT_GROUP_ID_FS, 0): fs::FileDownload<'_> => fs::F
 impl_mcumgr_command!((read,  MGMT_GROUP_ID_FS, 1): fs::FileStatus<'_> => fs::FileStatusResponse);
 impl_mcumgr_command!((read,  MGMT_GROUP_ID_FS, 2): fs::FileChecksum<'_, '_> => fs::FileChecksumResponse);
 impl_mcumgr_command!((read,  MGMT_GROUP_ID_FS, 3): fs::SupportedFileChecksumTypes => fs::SupportedFileChecksumTypesResponse);
-impl_mcumgr_command!((write, MGMT_GROUP_ID_FS, 4): fs::FileClose => ());
+impl_mcumgr_command!((write, MGMT_GROUP_ID_FS, 4): fs::FileClose => fs::FileCloseResponse);
 
 impl_mcumgr_command!((write, MGMT_GROUP_ID_SHELL, 0): shell::ShellCommandLineExecute<'_> => shell::ShellCommandLineExecuteResponse);
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use ciborium::cbor;
+
+    #[test]
+    fn decode_error_none() {
+        let mut cbor_data = vec![];
+        ciborium::into_writer(
+            &cbor!({
+                "foo" => 42,
+            })
+            .unwrap(),
+            &mut cbor_data,
+        )
+        .unwrap();
+        let err: ErrResponse = ciborium::from_reader(cbor_data.as_slice()).unwrap();
+        assert_eq!(
+            err,
+            ErrResponse {
+                rc: None,
+                err: None
+            }
+        );
+    }
+
+    #[test]
+    fn decode_error_v1() {
+        let mut cbor_data = vec![];
+        ciborium::into_writer(
+            &cbor!({
+                "rc" => 10,
+            })
+            .unwrap(),
+            &mut cbor_data,
+        )
+        .unwrap();
+        let err: ErrResponse = ciborium::from_reader(cbor_data.as_slice()).unwrap();
+        assert_eq!(
+            err,
+            ErrResponse {
+                rc: Some(10),
+                err: None
+            }
+        );
+    }
+
+    #[test]
+    fn decode_error_v2() {
+        let mut cbor_data = vec![];
+        ciborium::into_writer(
+            &cbor!({
+                "err" => {
+                    "group" => 4,
+                    "rc" => 20,
+                }
+            })
+            .unwrap(),
+            &mut cbor_data,
+        )
+        .unwrap();
+        let err: ErrResponse = ciborium::from_reader(cbor_data.as_slice()).unwrap();
+        assert_eq!(
+            err,
+            ErrResponse {
+                rc: None,
+                err: Some(ErrResponseV2 { group: 4, rc: 20 })
+            }
+        );
+    }
+
+    #[test]
+    fn is_default() {
+        assert!(super::is_default(&0));
+        assert!(!super::is_default(&5));
+    }
+}
