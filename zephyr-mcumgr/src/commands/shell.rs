@@ -8,10 +8,39 @@ pub struct ShellCommandLineExecute<'a> {
 }
 
 /// Response for [`ShellCommandLineExecute`] command
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Eq, PartialEq)]
 pub struct ShellCommandLineExecuteResponse {
     /// command output
     pub o: String,
     /// return code from shell command execution
     pub ret: i32,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::super::macros::command_encode_decode_test;
+    use super::*;
+    use ciborium::cbor;
+
+    command_encode_decode_test! {
+        echo,
+        (2, 9, 0),
+        ShellCommandLineExecute{
+            argv: &[
+                "kernel".to_string(),
+                "version".to_string(),
+            ],
+        },
+        cbor!({
+            "argv" => ["kernel", "version"]
+        }),
+        cbor!({
+            "o" => "some_zephyr_version",
+            "ret" => -4
+        }),
+        ShellCommandLineExecuteResponse{
+            o: "some_zephyr_version".to_string(),
+            ret: -4,
+        },
+    }
 }
