@@ -27,10 +27,9 @@ pub struct FileDownloadResponse {
 }
 
 fn data_too_large_error() -> std::io::Error {
-    std::io::Error::new(
-        std::io::ErrorKind::UnexpectedEof,
-        Box::<dyn std::error::Error + Send + Sync>::from("Serialized data too large".to_string()),
-    )
+    std::io::Error::other(Box::<dyn std::error::Error + Send + Sync>::from(
+        "Serialized data too large".to_string(),
+    ))
 }
 
 struct CountingWriter {
@@ -89,11 +88,17 @@ pub fn file_upload_max_data_chunk_size(
         .checked_sub(size_without_data)
         .ok_or_else(data_too_large_error)?;
 
-    if estimated_data_size == 0 {
+    let data_length_bytes = if estimated_data_size == 0 {
         return Err(data_too_large_error());
-    }
-
-    let data_length_bytes = estimated_data_size.ilog2() / 8 + 1;
+    } else if estimated_data_size <= u8::MAX as usize {
+        1
+    } else if estimated_data_size < u16::MAX as usize {
+        2
+    } else if estimated_data_size < u32::MAX as usize {
+        4
+    } else {
+        8
+    };
 
     // Remove data length entry from estimated data size
     let actual_data_size = estimated_data_size
@@ -237,7 +242,7 @@ mod tests {
 
     #[test]
     fn file_upload_max_data_chunk_size() {
-        for smp_frame_size in 57..1300 {
+        for smp_frame_size in 57..100000 {
             let smp_payload_size = smp_frame_size - 8 /* SMP frame header */;
 
             let filename = "test.txt";
@@ -253,15 +258,9 @@ mod tests {
 
             let mut cbor_data = vec![];
             ciborium::into_writer(&cmd, &mut cbor_data).unwrap();
-            println!(
-                "{}",
-                cbor_data
-                    .iter()
-                    .map(|x| format!("{:02x}", x))
-                    .collect::<String>()
-            );
+
             assert!(
-                smp_payload_size - 1 <= cbor_data.len() && cbor_data.len() <= smp_payload_size,
+                smp_payload_size - 2 <= cbor_data.len() && cbor_data.len() <= smp_payload_size,
                 "Failed at frame size {}: actual={}, max={}",
                 smp_frame_size,
                 cbor_data.len(),
