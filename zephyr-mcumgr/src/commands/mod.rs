@@ -61,3 +61,75 @@ impl_mcumgr_command!((read,  MGMT_GROUP_ID_FS, 3): fs::SupportedFileChecksumType
 impl_mcumgr_command!((write, MGMT_GROUP_ID_FS, 4): fs::FileClose => ());
 
 impl_mcumgr_command!((write, MGMT_GROUP_ID_SHELL, 0): shell::ShellCommandLineExecute<'_> => shell::ShellCommandLineExecuteResponse);
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use ciborium::cbor;
+
+    #[test]
+    fn decode_error_none() {
+        let mut cbor_data = vec![];
+        ciborium::into_writer(
+            &cbor!({
+                "foo" => 42,
+            })
+            .unwrap(),
+            &mut cbor_data,
+        )
+        .unwrap();
+        let err: ErrResponse = ciborium::from_reader(cbor_data.as_slice()).unwrap();
+        assert_eq!(
+            err,
+            ErrResponse {
+                rc: None,
+                err: None
+            }
+        );
+    }
+
+    #[test]
+    fn decode_error_v1() {
+        let mut cbor_data = vec![];
+        ciborium::into_writer(
+            &cbor!({
+                "rc" => 10,
+            })
+            .unwrap(),
+            &mut cbor_data,
+        )
+        .unwrap();
+        let err: ErrResponse = ciborium::from_reader(cbor_data.as_slice()).unwrap();
+        assert_eq!(
+            err,
+            ErrResponse {
+                rc: Some(10),
+                err: None
+            }
+        );
+    }
+
+    #[test]
+    fn decode_error_v2() {
+        let mut cbor_data = vec![];
+        ciborium::into_writer(
+            &cbor!({
+                "err" => {
+                    "group" => 4,
+                    "rc" => 20,
+                }
+            })
+            .unwrap(),
+            &mut cbor_data,
+        )
+        .unwrap();
+        let err: ErrResponse = ciborium::from_reader(cbor_data.as_slice()).unwrap();
+        assert_eq!(
+            err,
+            ErrResponse {
+                rc: None,
+                err: Some(ErrResponseV2 { group: 4, rc: 20 })
+            }
+        );
+    }
+}
