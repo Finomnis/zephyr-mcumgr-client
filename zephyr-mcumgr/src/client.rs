@@ -314,7 +314,9 @@ impl MCUmgrClient {
 
     /// Close all device files MCUmgr has currently open
     pub fn fs_file_close(&mut self) -> Result<(), ExecuteError> {
-        self.connection.execute_command(&commands::fs::FileClose)
+        self.connection
+            .execute_command(&commands::fs::FileClose)
+            .map(Into::into)
     }
 
     /// Run a shell command.

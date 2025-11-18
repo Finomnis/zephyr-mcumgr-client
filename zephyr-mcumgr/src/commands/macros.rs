@@ -99,4 +99,48 @@ macro_rules! impl_serialize_as_empty_map {
     };
 }
 
+macro_rules! impl_deserialize_from_empty_map_and_into_unit {
+    ($type:ty) => {
+        impl From<$type> for () {
+            fn from(_: $type) -> () {
+                const _: () = [()][size_of::<$type>()]; // Fails if type is not a unit struct
+            }
+        }
+
+        impl<'de> ::serde::Deserialize<'de> for $type {
+            fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+            where
+                D: ::serde::Deserializer<'de>,
+            {
+                struct InternalVisitor;
+
+                impl<'de> ::serde::de::Visitor<'de> for InternalVisitor {
+                    type Value = $type;
+
+                    fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+                        write!(f, "an empty map/object (`{{}}`)")
+                    }
+
+                    fn visit_map<M>(self, mut map: M) -> Result<$type, M::Error>
+                    where
+                        M: ::serde::de::MapAccess<'de>,
+                    {
+                        // Ensure the map is empty
+                        if let Some(key) = map.next_key::<serde::de::IgnoredAny>()? {
+                            return Err(serde::de::Error::custom(format!(
+                                "unexpected key in Foo: {:?}",
+                                key
+                            )));
+                        }
+                        Ok(<$type>::default())
+                    }
+                }
+
+                deserializer.deserialize_map(InternalVisitor)
+            }
+        }
+    };
+}
+
+pub(super) use impl_deserialize_from_empty_map_and_into_unit;
 pub(super) use impl_serialize_as_empty_map;

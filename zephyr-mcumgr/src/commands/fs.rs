@@ -4,6 +4,10 @@ use serde::{Deserialize, Serialize};
 use serde_repr::Deserialize_repr;
 use strum_macros::Display;
 
+use crate::commands::macros::{
+    impl_deserialize_from_empty_map_and_into_unit, impl_serialize_as_empty_map,
+};
+
 use super::is_default;
 
 /// [File Download](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_groups/smp_group_8.html#file-download) command
@@ -200,8 +204,9 @@ impl FileChecksumData {
 }
 
 /// [Supported file hash/checksum types](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_groups/smp_group_8.html#supported-file-hash-checksum-types) command
-#[derive(Debug, Serialize, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct SupportedFileChecksumTypes;
+impl_serialize_as_empty_map!(SupportedFileChecksumTypes);
 
 /// Response for [`SupportedFileChecksumTypes`] command
 #[derive(Debug, Deserialize, Eq, PartialEq)]
@@ -231,8 +236,14 @@ pub struct FileChecksumProperties {
 }
 
 /// [File Close](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_groups/smp_group_8.html#file-close) command
-#[derive(Debug, Serialize, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct FileClose;
+impl_serialize_as_empty_map!(FileClose);
+
+/// Response for [`FileClose`] command
+#[derive(Default, Debug, Eq, PartialEq)]
+pub struct FileCloseResponse;
+impl_deserialize_from_empty_map_and_into_unit!(FileCloseResponse);
 
 #[cfg(test)]
 mod tests {
@@ -301,6 +312,7 @@ mod tests {
             len: Some(100),
         },
     }
+
     command_encode_decode_test! {
         file_download_without_len,
         (0, 8, 0),
@@ -322,12 +334,154 @@ mod tests {
             len: None,
         },
     }
-    // command_encode_decode_test! {
-    //     file_upload,
-    //     (0, 0, 0),
-    //     FileUpload{d: "Hello World!"},
-    //     cbor!({"d" => "Hello World!"}),
-    //     cbor!({"r" => "Hello World!"}),
-    //     FileUploadResponse{r: "Hello World!".to_string()},
-    // }
+
+    command_encode_decode_test! {
+        file_upload_with_len,
+        (2, 8, 0),
+        FileUpload{off: 0, data: &[1,2,3,4,5], name: "foo.bar", len: Some(123)},
+        cbor!({
+            "off" => 0,
+            "data" => ciborium::Value::Bytes(vec![1,2,3,4,5]),
+            "name" => "foo.bar",
+            "len" => 123,
+        }),
+        cbor!({
+            "off" => 58,
+        }),
+        FileUploadResponse{
+            off: 58
+        }
+    }
+
+    command_encode_decode_test! {
+        file_upload_without_len,
+        (2, 8, 0),
+        FileUpload{off: 10, data: &[40], name: "a.xy", len: None},
+        cbor!({
+            "off" => 10,
+            "data" => ciborium::Value::Bytes(vec![40]),
+            "name" => "a.xy",
+        }),
+        cbor!({
+            "off" => 0,
+        }),
+        FileUploadResponse{
+            off: 0
+        }
+    }
+
+    command_encode_decode_test! {
+        file_status,
+        (0, 8, 1),
+        FileStatus{name: "a.xy"},
+        cbor!({
+            "name" => "a.xy",
+        }),
+        cbor!({
+            "len" => 123,
+        }),
+        FileStatusResponse{
+            len: 123,
+        }
+    }
+
+    command_encode_decode_test! {
+        file_checksum_full_with_checksum,
+        (0, 8, 2),
+        FileChecksum{
+            name: "file.txt",
+            r#type: Some("sha256"),
+            off: 42,
+            len: Some(16),
+        },
+        cbor!({
+            "name" => "file.txt",
+            "type" => "sha256",
+            "off"  => 42,
+            "len"  => 16,
+        }),
+        cbor!({
+            "type"   => "foo",
+            "off"    => 69,
+            "len"    => 42,
+            "output" => 100000,
+        }),
+        FileChecksumResponse{
+            r#type: "foo".to_string(),
+            off: 69,
+            len: 42,
+            output: FileChecksumData::Checksum(100000),
+        }
+    }
+
+    command_encode_decode_test! {
+        file_checksum_empty_with_hash,
+        (0, 8, 2),
+        FileChecksum{
+            name: "file.txt",
+            r#type: None,
+            off: 0,
+            len: None,
+        },
+        cbor!({
+            "name" => "file.txt",
+        }),
+        cbor!({
+            "type"   => "foo",
+            "len"    => 42,
+            "output" => ciborium::Value::Bytes(vec![1,2,3,4]),
+        }),
+        FileChecksumResponse{
+            r#type: "foo".to_string(),
+            off: 0,
+            len: 42,
+            output: FileChecksumData::Hash(vec![1,2,3,4].into_boxed_slice()),
+        }
+    }
+
+    command_encode_decode_test! {
+        supported_checksum_types,
+        (0, 8, 3),
+        SupportedFileChecksumTypes,
+        cbor!({}),
+        cbor!({
+            "types" => {
+                "sha256" => {
+                    "format" => 1,
+                    "size" => 32,
+                },
+                "crc32" => {
+                    "format" => 0,
+                    "size" => 4
+                },
+            },
+        }),
+        SupportedFileChecksumTypesResponse{
+            types: HashMap::from([
+                (
+                    "crc32".to_string(),
+                    FileChecksumProperties{
+                        format: FileChecksumDataFormat::Numerical,
+                        size: 4,
+                    }
+                ),
+                (
+                    "sha256".to_string(),
+                    FileChecksumProperties{
+                        format: FileChecksumDataFormat::ByteArray,
+                        size: 32,
+                    }
+                ),
+            ])
+        }
+    }
+
+    command_encode_decode_test! {
+        file_close,
+        (2, 8, 4),
+        FileClose,
+        cbor!({}),
+        cbor!({}),
+        FileCloseResponse,
+    }
 }
