@@ -7,7 +7,7 @@ use crate::commands::macros::{
 pub struct EraseStorage;
 impl_serialize_as_empty_map!(EraseStorage);
 
-/// Response for [`FileClose`] command
+/// Response for [`EraseStorage`] command
 #[derive(Default, Debug, Eq, PartialEq)]
 pub struct EraseStorageResponse;
 impl_deserialize_from_empty_map_and_into_unit!(EraseStorageResponse);
