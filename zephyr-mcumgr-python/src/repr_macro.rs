@@ -29,16 +29,18 @@ pub fn serialize_pybytes_as_hex<S>(pybytes: &Py<PyBytes>, serializer: S) -> Resu
 where
     S: Serializer,
 {
-    Python::attach(|py| {
-        let bytes = pybytes.bind(py);
+    use std::fmt::Write;
 
-        serializer.serialize_str(
-            &bytes
-                .as_bytes()
-                .iter()
-                .map(|x| format!("{x:02x}"))
-                .collect::<String>(),
-        )
+    Python::attach(|py| {
+        let bytes = pybytes.bind(py).as_bytes();
+
+        let mut hex_str = String::with_capacity(bytes.len() * 2);
+
+        for b in bytes {
+            write!(&mut hex_str, "{b:02x}").ok();
+        }
+
+        serializer.serialize_str(&hex_str)
     })
 }
 

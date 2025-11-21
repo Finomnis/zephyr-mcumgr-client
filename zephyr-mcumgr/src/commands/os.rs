@@ -118,7 +118,7 @@ where
     })
 }
 
-/// Serializes a [`chrono::NaiveDateTime`] object with three three fraction digits,
+/// Serializes a [`chrono::NaiveDateTime`] object with zero or three fractional digits,
 /// which is most compatible with Zephyr
 fn serialize_datetime_for_zephyr<S>(
     value: &chrono::NaiveDateTime,
