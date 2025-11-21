@@ -124,12 +124,8 @@ fn cli_main() -> Result<(), CliError> {
                                     s.key_value(
                                         "Stack Usage",
                                         if stksiz != 0 {
-                                            format!(
-                                                "{} / {} bytes ({} %)",
-                                                stkuse,
-                                                stksiz,
-                                                stkuse * 100 / stksiz,
-                                            )
+                                            let pct = stkuse * 100 / stksiz;
+                                            format!("{stkuse} / {stksiz} bytes ({pct} %)")
                                         } else {
                                             format!("{stkuse} / {stksiz} bytes")
                                         },
