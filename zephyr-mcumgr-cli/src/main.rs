@@ -59,6 +59,9 @@ pub enum CliError {
     #[error("File download failed")]
     #[diagnostic(code(zephyr_mcumgr::cli::file_download))]
     FileDownloadFailed(#[from] FileDownloadError),
+    #[error("Failed to parse datetime string")]
+    #[diagnostic(code(zephyr_mcumgr::cli::chrono_parse))]
+    ChronoParseFailed(#[from] chrono::ParseError),
 }
 
 fn cli_main() -> Result<(), CliError> {
@@ -141,6 +144,24 @@ fn cli_main() -> Result<(), CliError> {
                         }
                     })?;
                 }
+            }
+            args::OsCommand::SetDatetime { value, utc } => {
+                let time_string = if utc {
+                    let datetime_value = value
+                        .map(|raw| raw.parse())
+                        .transpose()?
+                        .unwrap_or_else(chrono::Utc::now);
+                    client.os_set_datetime(datetime_value)
+                } else {
+                    let datetime_value = value
+                        .map(|raw| raw.parse())
+                        .transpose()?
+                        .unwrap_or_else(chrono::Local::now);
+                    client.os_set_datetime(datetime_value)
+                }
+                .map_err(CliError::CommandExecutionFailed)?;
+
+                println!("Set device time to: {}", time_string);
             }
         },
         Group::Fs { command } => match command {

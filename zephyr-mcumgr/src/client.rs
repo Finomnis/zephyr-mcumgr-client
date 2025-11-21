@@ -164,6 +164,44 @@ impl MCUmgrClient {
             })
     }
 
+    /// Sets the RTC of the device to the given datetime.
+    ///
+    /// # Return
+    ///
+    /// The actual datetime string sent to the device
+    ///
+    pub fn os_set_datetime<Tz: chrono::TimeZone>(
+        &mut self,
+        value: chrono::DateTime<Tz>,
+    ) -> Result<String, ExecuteError>
+    where
+        Tz::Offset: std::fmt::Display,
+    {
+        let datetime = format!("{}", value.format("%Y-%m-%dT%H:%M:%S.%.6f%z"));
+
+        self.connection
+            .execute_command(&commands::os::DateTimeSet {
+                datetime: &datetime,
+            })?;
+
+        Ok(datetime)
+    }
+
+    /// Retrieves the device RTC's datetime.
+    pub fn os_get_datetime<Tz: chrono::TimeZone>(
+        &mut self,
+    ) -> Result<chrono::DateTime<Tz>, ExecuteError> {
+        // let datetime = format!("{}", value.format("%Y-%m-%dT%H:%M:%S.%.6f%z"));
+
+        // self.connection
+        //     .execute_command(&commands::os::DateTimeSet {
+        //         datetime: &datetime,
+        //     })?;
+
+        // Ok(datetime)
+        todo!()
+    }
+
     /// Load a file from the device.
     ///
     ///  # Arguments
