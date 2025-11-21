@@ -2,6 +2,7 @@
 # ruff: noqa: E501, F401
 
 import builtins
+import datetime
 import enum
 import typing
 
@@ -112,6 +113,14 @@ class MCUmgrClient:
         # Return
         
         A map of task names with their respective statistics
+        """
+    def os_set_datetime(self, datetime: datetime.datetime) -> None:
+        r"""
+        Sets the RTC of the device to the given datetime.
+        """
+    def os_get_datetime(self) -> datetime.datetime:
+        r"""
+        Retrieves the device RTC's datetime.
         """
     def fs_file_download(self, name: builtins.str, progress: typing.Optional[typing.Any] = None) -> bytes:
         r"""

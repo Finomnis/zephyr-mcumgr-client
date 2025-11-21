@@ -1,6 +1,7 @@
 #![forbid(unsafe_code)]
 
 use miette::IntoDiagnostic;
+use pyo3::types::PyDateTime;
 use pyo3::{prelude::*, types::PyBytes};
 
 use pyo3::exceptions::PyRuntimeError;
@@ -117,6 +118,21 @@ impl MCUmgrClient {
                     .collect()
             })
             .map_err(err_to_pyerr)
+    }
+
+    /// Sets the RTC of the device to the given datetime.
+    pub fn os_set_datetime<'py>(&self, datetime: Bound<'py, PyDateTime>) -> PyResult<()> {
+        self.lock()?
+            .os_set_datetime(datetime.extract()?)
+            .map_err(err_to_pyerr)
+    }
+
+    /// Retrieves the device RTC's datetime.
+    pub fn os_get_datetime<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyDateTime>> {
+        self.lock()?
+            .os_get_datetime()
+            .map_err(err_to_pyerr)
+            .and_then(|datetime| datetime.into_pyobject(py))
     }
 
     /// Load a file from the device.
