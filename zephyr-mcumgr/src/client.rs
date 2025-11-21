@@ -165,41 +165,17 @@ impl MCUmgrClient {
     }
 
     /// Sets the RTC of the device to the given datetime.
-    ///
-    /// # Return
-    ///
-    /// The actual datetime string sent to the device
-    ///
-    pub fn os_set_datetime<Tz: chrono::TimeZone>(
-        &mut self,
-        value: chrono::DateTime<Tz>,
-    ) -> Result<String, ExecuteError>
-    where
-        Tz::Offset: std::fmt::Display,
-    {
-        let datetime = format!("{}", value.format("%Y-%m-%dT%H:%M:%S%.6f%z"));
-
+    pub fn os_set_datetime(&mut self, datetime: chrono::NaiveDateTime) -> Result<(), ExecuteError> {
         self.connection
-            .execute_command(&commands::os::DateTimeSet {
-                datetime: &datetime,
-            })?;
-
-        Ok(datetime)
+            .execute_command(&commands::os::DateTimeSet { datetime })
+            .map(Into::into)
     }
 
     /// Retrieves the device RTC's datetime.
-    pub fn os_get_datetime<Tz: chrono::TimeZone>(
-        &mut self,
-    ) -> Result<chrono::DateTime<Tz>, ExecuteError> {
-        // let datetime = format!("{}", value.format("%Y-%m-%dT%H:%M:%S.%.6f%z"));
-
-        // self.connection
-        //     .execute_command(&commands::os::DateTimeSet {
-        //         datetime: &datetime,
-        //     })?;
-
-        // Ok(datetime)
-        todo!()
+    pub fn os_get_datetime(&mut self) -> Result<chrono::NaiveDateTime, ExecuteError> {
+        self.connection
+            .execute_command(&commands::os::DateTimeGet)
+            .map(|val| val.datetime)
     }
 
     /// Load a file from the device.

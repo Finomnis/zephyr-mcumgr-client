@@ -25,7 +25,7 @@ serde_repr.workspace = true
 ciborium.workspace = true
 log.workspace = true
 strum = { workspace = true, features = ["derive"] }
-chrono.workspace = true
+chrono = { workspace = true, features = ["serde"] }
 
 [dev-dependencies]
 proptest = "1.9.0"

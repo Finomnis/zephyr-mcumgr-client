@@ -146,22 +146,33 @@ fn cli_main() -> Result<(), CliError> {
                 }
             }
             args::OsCommand::SetDatetime { value, utc } => {
-                let time_string = if utc {
-                    let datetime_value = value
-                        .map(|raw| raw.parse())
-                        .transpose()?
-                        .unwrap_or_else(chrono::Utc::now);
-                    client.os_set_datetime(datetime_value)
-                } else {
-                    let datetime_value = value
-                        .map(|raw| raw.parse())
-                        .transpose()?
-                        .unwrap_or_else(chrono::Local::now);
-                    client.os_set_datetime(datetime_value)
-                }
-                .map_err(CliError::CommandExecutionFailed)?;
+                use chrono::{DateTime, FixedOffset, NaiveDateTime};
 
-                println!("Set device time to: {}", time_string);
+                let datetime_value = if let Some(value) = value {
+                    value
+                        .parse::<DateTime<FixedOffset>>()
+                        .map(|datetime| {
+                            if utc {
+                                datetime.naive_utc()
+                            } else {
+                                datetime.naive_local()
+                            }
+                        })
+                        .or_else(|_| value.parse::<NaiveDateTime>())?
+                } else {
+                    let now = chrono::Local::now();
+                    if utc {
+                        now.naive_utc()
+                    } else {
+                        now.naive_local()
+                    }
+                };
+
+                client
+                    .os_set_datetime(datetime_value)
+                    .map_err(CliError::CommandExecutionFailed)?;
+
+                println!("Set device time to: {}", datetime_value.format("%F %T"));
             }
         },
         Group::Fs { command } => match command {
