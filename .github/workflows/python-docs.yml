@@ -36,6 +36,8 @@ jobs:
 
   # Deploy job
   deploy:
+    if: github.event_name == 'release'
+
     # Add a dependency to the build job
     needs: build
 
@@ -54,4 +56,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4 # or specific "vX.X.X" version tag for this action
+        uses: actions/deploy-pages@v4
