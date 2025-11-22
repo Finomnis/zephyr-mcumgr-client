@@ -43,6 +43,16 @@ pub enum OsCommand {
     },
     /// Queries live task statistics
     TaskStatistics,
+    /// Set the device's RTC datetime
+    SetDatetime {
+        /// The datetime value, as RFC3339; host time if omitted
+        value: Option<String>,
+        /// Use UTC time instead of local time
+        #[arg(long)]
+        utc: bool,
+    },
+    /// Retrieve the device's RTC datetime
+    GetDatetime,
 }
 
 #[derive(Debug, Subcommand)]

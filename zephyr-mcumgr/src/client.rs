@@ -164,6 +164,20 @@ impl MCUmgrClient {
             })
     }
 
+    /// Sets the RTC of the device to the given datetime.
+    pub fn os_set_datetime(&mut self, datetime: chrono::NaiveDateTime) -> Result<(), ExecuteError> {
+        self.connection
+            .execute_command(&commands::os::DateTimeSet { datetime })
+            .map(Into::into)
+    }
+
+    /// Retrieves the device RTC's datetime.
+    pub fn os_get_datetime(&mut self) -> Result<chrono::NaiveDateTime, ExecuteError> {
+        self.connection
+            .execute_command(&commands::os::DateTimeGet)
+            .map(|val| val.datetime)
+    }
+
     /// Load a file from the device.
     ///
     ///  # Arguments

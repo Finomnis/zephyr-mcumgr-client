@@ -2,13 +2,15 @@
 # ruff: noqa: E501, F401
 
 import builtins
+import collections.abc
+import datetime
 import enum
 import typing
 
 @typing.final
 class FileChecksum:
     r"""
-    Return value of [`MCUmgrClient::fs_file_checksum`].
+    Return value of `MCUmgrClient.fs_file_checksum`.
     """
     @property
     def type(self) -> builtins.str:
@@ -37,7 +39,7 @@ class FileChecksumProperties:
     Properties of a hash/checksum algorithm
     """
     @property
-    def format(self) -> FileChecksumDataFormat:
+    def format(self) -> 'FileChecksumDataFormat':
         r"""
         format that the hash/checksum returns
         """
@@ -50,7 +52,7 @@ class FileChecksumProperties:
 @typing.final
 class FileStatus:
     r"""
-    Return value of [`MCUmgrClient::fs_file_status`].
+    Return value of `MCUmgrClient.fs_file_status`.
     """
     @property
     def length(self) -> builtins.int:
@@ -64,11 +66,11 @@ class MCUmgrClient:
     A high level client for Zephyr's MCUmgr SMP functionality
     """
     @staticmethod
-    def new_from_serial(serial: builtins.str, baud_rate: builtins.int = 115200, timeout_ms: builtins.int = 500) -> MCUmgrClient:
+    def new_from_serial(serial: builtins.str, baud_rate: builtins.int = 115200, timeout_ms: builtins.int = 500) -> 'MCUmgrClient':
         r"""
         Creates a new serial port based Zephyr MCUmgr SMP client.
         
-         # Arguments
+        ### Arguments
         
         * `serial` - The identifier of the serial device. (Windows: `COMxx`, Linux: `/dev/ttyXX`)
         * `baud_rate` - The baud rate of the serial port.
@@ -100,75 +102,87 @@ class MCUmgrClient:
         
         This can be used as a sanity check for whether the device is connected and responsive.
         """
-    def os_task_statistics(self) -> builtins.dict[builtins.str, TaskStatistics]:
+    def os_task_statistics(self) -> 'builtins.dict[builtins.str, TaskStatistics]':
         r"""
         Queries live task statistics
         
-        # Note
+        ### Note
         
         Converts `stkuse` and `stksiz` to bytes.
         Zephyr originally reports them as number of 4 byte words.
         
-        # Return
+        ### Return
         
         A map of task names with their respective statistics
         """
-    def fs_file_download(self, name: builtins.str, progress: typing.Optional[typing.Any] = None) -> bytes:
+    def os_set_datetime(self, datetime: datetime.datetime) -> None:
+        r"""
+        Sets the RTC of the device to the given datetime.
+        
+        Uses the contained local time and discards timezone information.
+        """
+    def os_get_datetime(self) -> datetime.datetime:
+        r"""
+        Retrieves the device RTC's datetime.
+        
+        Will not contain timezone information.
+        """
+    def fs_file_download(self, name: builtins.str, progress: typing.Optional[collections.abc.Callable[[builtins.int, builtins.int], None]] = None) -> bytes:
         r"""
         Load a file from the device.
         
-         # Arguments
+        ### Arguments
         
         * `name` - The full path of the file on the device.
         * `progress` - A callable object that takes (transmitted, total) values as parameters.
                        Any return value is ignored. Raising an exception aborts the operation.
         
-        # Return
+        ### Return
         
         The file content
         
-        # Performance
+        ### Performance
         
         Downloading files with Zephyr's default parameters is slow.
         You want to increase [`MCUMGR_TRANSPORT_NETBUF_SIZE`](https://github.com/zephyrproject-rtos/zephyr/blob/v4.2.1/subsys/mgmt/mcumgr/transport/Kconfig#L40)
         to maybe `4096` or larger.
         """
-    def fs_file_upload(self, name: builtins.str, data: bytes, progress: typing.Optional[typing.Any] = None) -> None:
+    def fs_file_upload(self, name: builtins.str, data: bytes, progress: typing.Optional[collections.abc.Callable[[builtins.int, builtins.int], None]] = None) -> None:
         r"""
         Write a file to the device.
         
-         # Arguments
+        ### Arguments
         
         * `name` - The full path of the file on the device.
         * `data` - The file content.
         * `progress` - A callable object that takes (transmitted, total) values as parameters.
                        Any return value is ignored. Raising an exception aborts the operation.
         
-        # Performance
+        ### Performance
         
         Uploading files with Zephyr's default parameters is slow.
         You want to increase [`MCUMGR_TRANSPORT_NETBUF_SIZE`](https://github.com/zephyrproject-rtos/zephyr/blob/v4.2.1/subsys/mgmt/mcumgr/transport/Kconfig#L40)
-        to maybe `4096` and then enable larger chunking through either [`MCUmgrClient::set_frame_size`]
-        or [`MCUmgrClient::use_auto_frame_size`].
+        to maybe `4096` and then enable larger chunking through either `set_frame_size`
+        or `use_auto_frame_size`.
         """
-    def fs_file_status(self, name: builtins.str) -> FileStatus:
+    def fs_file_status(self, name: builtins.str) -> 'FileStatus':
         r"""
         Queries the file status
         """
-    def fs_file_checksum(self, name: builtins.str, algorithm: typing.Optional[builtins.str] = None, offset: builtins.int = 0, length: typing.Optional[builtins.int] = None) -> FileChecksum:
+    def fs_file_checksum(self, name: builtins.str, algorithm: typing.Optional[builtins.str] = None, offset: builtins.int = 0, length: typing.Optional[builtins.int] = None) -> 'FileChecksum':
         r"""
         Computes the hash/checksum of a file
         
-        For available algorithms, see [`fs_supported_checksum_types()`](MCUmgrClient::fs_supported_checksum_types).
+        For available algorithms, see `fs_supported_checksum_types`.
         
-        # Arguments
+        ### Arguments
         
         * `name` - The absolute path of the file on the device
         * `algorithm` - The hash/checksum algorithm to use, or default if None
         * `offset` - How many bytes of the file to skip
         * `length` - How many bytes to read after `offset`. None for the entire file.
         """
-    def fs_supported_checksum_types(self) -> builtins.dict[builtins.str, FileChecksumProperties]:
+    def fs_supported_checksum_types(self) -> 'builtins.dict[builtins.str, FileChecksumProperties]':
         r"""
         Queries which hash/checksum algorithms are available on the target
         """
@@ -180,11 +194,11 @@ class MCUmgrClient:
         r"""
         Run a shell command.
         
-        # Arguments
+        ### Arguments
         
         * `argv` - The shell command to be executed.
         
-        # Return
+        ### Return
         
         The command output
         """
@@ -203,22 +217,18 @@ class MCUmgrClient:
         Read Zephyr's [SMP Protocol Specification](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_protocol.html)
         for more information.
         
-        # Arguments
+        ### Arguments
         
         * `write_operation` - Whether the command is a read or write operation.
         * `group_id` - The group ID of the command
         * `command_id` - The command ID
         * `data` - Anything that can be serialized as a proper packet payload.
         
-        # Example
+        ### Example
         
         ```python
         client.raw_command(True, 0, 0, {"d": "Hello!"})
-        ```
-        
-        Response:
-        ```none
-        {'r': 'Hello!'}
+        # Returns: {'r': 'Hello!'}
         ```
         """
 

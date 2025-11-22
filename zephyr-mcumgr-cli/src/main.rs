@@ -59,6 +59,9 @@ pub enum CliError {
     #[error("File download failed")]
     #[diagnostic(code(zephyr_mcumgr::cli::file_download))]
     FileDownloadFailed(#[from] FileDownloadError),
+    #[error("Failed to parse datetime string")]
+    #[diagnostic(code(zephyr_mcumgr::cli::chrono_parse))]
+    ChronoParseFailed(#[from] chrono::ParseError),
 }
 
 fn cli_main() -> Result<(), CliError> {
@@ -140,6 +143,47 @@ fn cli_main() -> Result<(), CliError> {
                             });
                         }
                     })?;
+                }
+            }
+            args::OsCommand::SetDatetime { value, utc } => {
+                use chrono::{DateTime, FixedOffset, NaiveDateTime};
+
+                let datetime_value = if let Some(value) = value {
+                    value
+                        .parse::<DateTime<FixedOffset>>()
+                        .map(|datetime| {
+                            if utc {
+                                datetime.naive_utc()
+                            } else {
+                                datetime.naive_local()
+                            }
+                        })
+                        .or_else(|_| value.parse::<NaiveDateTime>())?
+                } else {
+                    let now = chrono::Local::now();
+                    if utc {
+                        now.naive_utc()
+                    } else {
+                        now.naive_local()
+                    }
+                };
+
+                client
+                    .os_set_datetime(datetime_value)
+                    .map_err(CliError::CommandExecutionFailed)?;
+
+                if args.verbose {
+                    println!("Set device time to: {}", datetime_value.format("%F %T"));
+                }
+            }
+            args::OsCommand::GetDatetime => {
+                let datetime = client
+                    .os_get_datetime()
+                    .map_err(CliError::CommandExecutionFailed)?;
+                if args.verbose {
+                    println!("Device time: {}", datetime);
+                } else {
+                    println!("{:?}", datetime);
                 }
             }
         },

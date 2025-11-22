@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use chrono::Timelike;
 use serde::{Deserialize, Serialize};
 
 use crate::commands::macros::{
@@ -97,6 +98,42 @@ pub struct TaskStatisticsResponse {
     pub tasks: HashMap<String, TaskStatisticsEntry>,
 }
 
+/// Parses a [`chrono::NaiveDateTime`] object with optional timezone specifiers
+fn deserialize_datetime_and_ignore_timezone<'de, D>(
+    de: D,
+) -> Result<chrono::NaiveDateTime, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum NaiveOrFixed {
+        Naive(chrono::NaiveDateTime),
+        Fixed(chrono::DateTime<chrono::FixedOffset>),
+    }
+
+    NaiveOrFixed::deserialize(de).map(|val| match val {
+        NaiveOrFixed::Naive(naive_date_time) => naive_date_time,
+        NaiveOrFixed::Fixed(date_time) => date_time.naive_local(),
+    })
+}
+
+/// Serializes a [`chrono::NaiveDateTime`] object with zero or three fractional digits,
+/// which is most compatible with Zephyr
+fn serialize_datetime_for_zephyr<S>(
+    value: &chrono::NaiveDateTime,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    if value.time().nanosecond() != 0 {
+        serializer.serialize_str(&format!("{}", value.format("%Y-%m-%dT%H:%M:%S%.3f")))
+    } else {
+        serializer.serialize_str(&format!("{}", value.format("%Y-%m-%dT%H:%M:%S")))
+    }
+}
+
 /// [Date-Time Get](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_groups/smp_group_0.html#date-time-get) command
 #[derive(Debug, Eq, PartialEq)]
 pub struct DateTimeGet;
@@ -105,15 +142,17 @@ impl_serialize_as_empty_map!(DateTimeGet);
 /// Response for [`DateTimeGet`] command
 #[derive(Debug, Deserialize, Eq, PartialEq)]
 pub struct DateTimeGetResponse {
-    /// String in format: `yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZZZZ`.
-    pub datetime: String,
+    /// String in format: `yyyy-MM-dd'T'HH:mm:ss.SSS`.
+    #[serde(deserialize_with = "deserialize_datetime_and_ignore_timezone")]
+    pub datetime: chrono::NaiveDateTime,
 }
 
 /// [Date-Time Set](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_groups/smp_group_0.html#date-time-set) command
 #[derive(Serialize, Debug, Eq, PartialEq)]
-pub struct DateTimeSet<'a> {
-    /// String in format: `yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZZZZ`.
-    pub datetime: &'a str,
+pub struct DateTimeSet {
+    /// String in format: `yyyy-MM-dd'T'HH:mm:ss.SSS`.
+    #[serde(serialize_with = "serialize_datetime_for_zephyr")]
+    pub datetime: chrono::NaiveDateTime,
 }
 
 /// Response for [`DateTimeSet`] command
@@ -139,6 +178,7 @@ pub struct MCUmgrParametersResponse {
 mod tests {
     use super::super::macros::command_encode_decode_test;
     use super::*;
+    use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
     use ciborium::cbor;
 
     #[test]
@@ -229,7 +269,7 @@ mod tests {
     }
 
     command_encode_decode_test! {
-        datetime_get,
+        datetime_get_with_timezone,
         (0, 0, 4),
         DateTimeGet,
         cbor!({}),
@@ -237,18 +277,57 @@ mod tests {
             "datetime" => "2025-11-20T11:56:05.366345+01:00"
         }),
         DateTimeGetResponse{
-            datetime: "2025-11-20T11:56:05.366345+01:00".to_string(),
+            datetime: NaiveDateTime::new(NaiveDate::from_ymd_opt(2025, 11, 20).unwrap(), NaiveTime::from_hms_micro_opt(11,56,5,366345).unwrap()),
         },
     }
 
     command_encode_decode_test! {
-        datetime_set,
+        datetime_get_with_millis,
+        (0, 0, 4),
+        DateTimeGet,
+        cbor!({}),
+        cbor!({
+            "datetime" => "2025-11-20T11:56:05.366"
+        }),
+        DateTimeGetResponse{
+            datetime: NaiveDateTime::new(NaiveDate::from_ymd_opt(2025, 11, 20).unwrap(), NaiveTime::from_hms_milli_opt(11,56,5,366).unwrap()),
+        },
+    }
+
+    command_encode_decode_test! {
+        datetime_get_without_millis,
+        (0, 0, 4),
+        DateTimeGet,
+        cbor!({}),
+        cbor!({
+            "datetime" => "2025-11-20T11:56:05"
+        }),
+        DateTimeGetResponse{
+            datetime: NaiveDateTime::new(NaiveDate::from_ymd_opt(2025, 11, 20).unwrap(), NaiveTime::from_hms_opt(11,56,5).unwrap()),
+        },
+    }
+
+    command_encode_decode_test! {
+        datetime_set_with_millis,
         (2, 0, 4),
         DateTimeSet{
-            datetime: "2025-11-20T12:03:56.642Z"
+            datetime: NaiveDateTime::new(NaiveDate::from_ymd_opt(2025, 11, 20).unwrap(), NaiveTime::from_hms_micro_opt(12,3,56,642133).unwrap())
         },
         cbor!({
-            "datetime" => "2025-11-20T12:03:56.642Z"
+            "datetime" => "2025-11-20T12:03:56.642"
+        }),
+        cbor!({}),
+        DateTimeSetResponse,
+    }
+
+    command_encode_decode_test! {
+        datetime_set_without_millis,
+        (2, 0, 4),
+        DateTimeSet{
+            datetime: NaiveDateTime::new(NaiveDate::from_ymd_opt(2025, 11, 20).unwrap(), NaiveTime::from_hms_opt(12,3,56).unwrap())
+        },
+        cbor!({
+            "datetime" => "2025-11-20T12:03:56"
         }),
         cbor!({}),
         DateTimeSetResponse,

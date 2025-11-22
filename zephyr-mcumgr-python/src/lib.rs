@@ -1,6 +1,7 @@
 #![forbid(unsafe_code)]
 
 use miette::IntoDiagnostic;
+use pyo3::types::PyDateTime;
 use pyo3::{prelude::*, types::PyBytes};
 
 use pyo3::exceptions::PyRuntimeError;
@@ -44,7 +45,7 @@ impl MCUmgrClient {
 impl MCUmgrClient {
     /// Creates a new serial port based Zephyr MCUmgr SMP client.
     ///
-    ///  # Arguments
+    /// ### Arguments
     ///
     /// * `serial` - The identifier of the serial device. (Windows: `COMxx`, Linux: `/dev/ttyXX`)
     /// * `baud_rate` - The baud rate of the serial port.
@@ -99,12 +100,12 @@ impl MCUmgrClient {
 
     /// Queries live task statistics
     ///
-    /// # Note
+    /// ### Note
     ///
     /// Converts `stkuse` and `stksiz` to bytes.
     /// Zephyr originally reports them as number of 4 byte words.
     ///
-    /// # Return
+    /// ### Return
     ///
     /// A map of task names with their respective statistics
     fn os_task_statistics(&self) -> PyResult<HashMap<String, TaskStatistics>> {
@@ -119,19 +120,40 @@ impl MCUmgrClient {
             .map_err(err_to_pyerr)
     }
 
+    /// Sets the RTC of the device to the given datetime.
+    ///
+    /// Uses the contained local time and discards timezone information.
+    ///
+    pub fn os_set_datetime<'py>(&self, datetime: Bound<'py, PyDateTime>) -> PyResult<()> {
+        self.lock()?
+            .os_set_datetime(datetime.extract()?)
+            .map_err(err_to_pyerr)
+    }
+
+    /// Retrieves the device RTC's datetime.
+    ///
+    /// Will not contain timezone information.
+    ///
+    pub fn os_get_datetime<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyDateTime>> {
+        self.lock()?
+            .os_get_datetime()
+            .map_err(err_to_pyerr)
+            .and_then(|datetime| datetime.into_pyobject(py))
+    }
+
     /// Load a file from the device.
     ///
-    ///  # Arguments
+    /// ### Arguments
     ///
     /// * `name` - The full path of the file on the device.
     /// * `progress` - A callable object that takes (transmitted, total) values as parameters.
     ///                Any return value is ignored. Raising an exception aborts the operation.
     ///
-    /// # Return
+    /// ### Return
     ///
     /// The file content
     ///
-    /// # Performance
+    /// ### Performance
     ///
     /// Downloading files with Zephyr's default parameters is slow.
     /// You want to increase [`MCUMGR_TRANSPORT_NETBUF_SIZE`](https://github.com/zephyrproject-rtos/zephyr/blob/v4.2.1/subsys/mgmt/mcumgr/transport/Kconfig#L40)
@@ -141,6 +163,7 @@ impl MCUmgrClient {
         &self,
         py: Python<'py>,
         name: &str,
+        #[gen_stub(override_type(type_repr="typing.Optional[collections.abc.Callable[[builtins.int, builtins.int], None]]", imports=("builtins", "collections.abc", "typing")))]
         progress: Option<Bound<'py, PyAny>>,
     ) -> PyResult<Bound<'py, PyBytes>> {
         let mut data = vec![];
@@ -171,24 +194,25 @@ impl MCUmgrClient {
 
     /// Write a file to the device.
     ///
-    ///  # Arguments
+    /// ### Arguments
     ///
     /// * `name` - The full path of the file on the device.
     /// * `data` - The file content.
     /// * `progress` - A callable object that takes (transmitted, total) values as parameters.
     ///                Any return value is ignored. Raising an exception aborts the operation.
     ///
-    /// # Performance
+    /// ### Performance
     ///
     /// Uploading files with Zephyr's default parameters is slow.
     /// You want to increase [`MCUMGR_TRANSPORT_NETBUF_SIZE`](https://github.com/zephyrproject-rtos/zephyr/blob/v4.2.1/subsys/mgmt/mcumgr/transport/Kconfig#L40)
-    /// to maybe `4096` and then enable larger chunking through either [`MCUmgrClient::set_frame_size`]
-    /// or [`MCUmgrClient::use_auto_frame_size`].
+    /// to maybe `4096` and then enable larger chunking through either `set_frame_size`
+    /// or `use_auto_frame_size`.
     #[pyo3(signature = (name, data, progress=None))]
     pub fn fs_file_upload<'py>(
         &self,
         name: &str,
         data: &Bound<'py, PyBytes>,
+        #[gen_stub(override_type(type_repr="typing.Optional[collections.abc.Callable[[builtins.int, builtins.int], None]]", imports=("builtins", "collections.abc", "typing")))]
         progress: Option<Bound<'py, PyAny>>,
     ) -> PyResult<()> {
         let bytes: &[u8] = data.extract()?;
@@ -227,9 +251,9 @@ impl MCUmgrClient {
 
     /// Computes the hash/checksum of a file
     ///
-    /// For available algorithms, see [`fs_supported_checksum_types()`](MCUmgrClient::fs_supported_checksum_types).
+    /// For available algorithms, see `fs_supported_checksum_types`.
     ///
-    /// # Arguments
+    /// ### Arguments
     ///
     /// * `name` - The absolute path of the file on the device
     /// * `algorithm` - The hash/checksum algorithm to use, or default if None
@@ -271,11 +295,11 @@ impl MCUmgrClient {
 
     /// Run a shell command.
     ///
-    /// # Arguments
+    /// ### Arguments
     ///
     /// * `argv` - The shell command to be executed.
     ///
-    /// # Return
+    /// ### Return
     ///
     /// The command output
     ///
@@ -307,22 +331,18 @@ impl MCUmgrClient {
     /// Read Zephyr's [SMP Protocol Specification](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_protocol.html)
     /// for more information.
     ///
-    /// # Arguments
+    /// ### Arguments
     ///
     /// * `write_operation` - Whether the command is a read or write operation.
     /// * `group_id` - The group ID of the command
     /// * `command_id` - The command ID
     /// * `data` - Anything that can be serialized as a proper packet payload.
     ///
-    /// # Example
+    /// ### Example
     ///
     /// ```python
     /// client.raw_command(True, 0, 0, {"d": "Hello!"})
-    /// ```
-    ///
-    /// Response:
-    /// ```none
-    /// {'r': 'Hello!'}
+    /// # Returns: {'r': 'Hello!'}
     /// ```
     ///
     pub fn raw_command<'py>(
@@ -339,10 +359,33 @@ impl MCUmgrClient {
     }
 }
 
+/// ### Example
+///
+/// ```python
+/// from zephyr_mcumgr import MCUmgrClient
+///
+/// client = MCUmgrClient.new_from_serial("COM42")
+/// client.set_timeout_ms(500)
+/// client.use_auto_frame_size()
+///
+/// print(client.os_echo("Hello world!"))
+/// # Hello world!
+/// ```
+///
 #[pymodule]
 mod zephyr_mcumgr {
     #[pymodule_export]
     use super::MCUmgrClient;
+    #[pymodule_export]
+    use super::return_types::FileChecksum;
+    #[pymodule_export]
+    use super::return_types::FileChecksumDataFormat;
+    #[pymodule_export]
+    use super::return_types::FileChecksumProperties;
+    #[pymodule_export]
+    use super::return_types::FileStatus;
+    #[pymodule_export]
+    use super::return_types::TaskStatistics;
 }
 
 // Define a function to gather stub information.

@@ -6,7 +6,7 @@ use serde::Serialize;
 
 use crate::repr_macro::generate_repr_from_serialize;
 
-/// Return value of [`MCUmgrClient::fs_file_status`].
+/// Return value of `MCUmgrClient.fs_file_status`.
 #[gen_stub_pyclass]
 #[pyclass(frozen)]
 #[derive(Serialize)]
@@ -22,7 +22,7 @@ impl From<commands::fs::FileStatusResponse> for FileStatus {
     }
 }
 
-/// Return value of [`MCUmgrClient::fs_file_checksum`].
+/// Return value of `MCUmgrClient.fs_file_checksum`.
 #[gen_stub_pyclass]
 #[pyclass(frozen)]
 #[derive(Serialize)]
@@ -38,7 +38,7 @@ pub struct FileChecksum {
     pub length: u64,
     /// output hash/checksum
     #[pyo3(get)]
-    #[serde(serialize_with = "crate::repr_macro::serialize_pybytes")]
+    #[serde(serialize_with = "crate::repr_macro::serialize_pybytes_as_hex")]
     pub output: Py<PyBytes>,
 }
 generate_repr_from_serialize!(FileChecksum);
@@ -73,7 +73,6 @@ pub enum FileChecksumDataFormat {
     /// Data is a bytes array
     ByteArray = 1,
 }
-generate_repr_from_serialize!(FileChecksumDataFormat);
 
 /// Properties of a hash/checksum algorithm
 #[gen_stub_pyclass]
