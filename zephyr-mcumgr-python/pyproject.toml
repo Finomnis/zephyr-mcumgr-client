@@ -27,7 +27,6 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/Finomnis/zephyr-mcumgr-client"
 Repository = "https://github.com/Finomnis/zephyr-mcumgr-client"
 Documentation = "https://finomnis.github.io/zephyr-mcumgr-client"
 Issues = "https://github.com/Finomnis/zephyr-mcumgr-client/issues"
