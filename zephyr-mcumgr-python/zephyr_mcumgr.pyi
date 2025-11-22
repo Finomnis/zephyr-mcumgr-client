@@ -224,12 +224,7 @@ class MCUmgrClient:
         
         ```python
         client.raw_command(True, 0, 0, {"d": "Hello!"})
-        ```
-        
-        Response:
-        
-        ```none
-        {'r': 'Hello!'}
+        # Returns: {'r': 'Hello!'}
         ```
         """
 

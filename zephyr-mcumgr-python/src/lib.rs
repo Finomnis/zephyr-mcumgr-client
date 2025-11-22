@@ -336,12 +336,7 @@ impl MCUmgrClient {
     ///
     /// ```python
     /// client.raw_command(True, 0, 0, {"d": "Hello!"})
-    /// ```
-    ///
-    /// Response:
-    ///
-    /// ```none
-    /// {'r': 'Hello!'}
+    /// # Returns: {'r': 'Hello!'}
     /// ```
     ///
     pub fn raw_command<'py>(
@@ -358,6 +353,19 @@ impl MCUmgrClient {
     }
 }
 
+/// ### Example
+///
+/// ```python
+/// from zephyr_mcumgr import MCUmgrClient
+///
+/// client = MCUmgrClient.new_from_serial("COM42")
+/// client.set_timeout_ms(500)
+/// client.use_auto_frame_size()
+///
+/// print(client.os_echo("Hello world!"))
+/// # Hello world!
+/// ```
+///
 #[pymodule]
 mod zephyr_mcumgr {
     #[pymodule_export]
