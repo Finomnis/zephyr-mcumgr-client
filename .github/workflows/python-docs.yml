@@ -25,7 +25,7 @@ jobs:
 
       - name: Build static files
         run: |
-          pip3 install zephyr-mcumgr-python
+          pip3 install ./zephyr-mcumgr-python
           pdoc -o zephyr-mcumgr-python/doc zephyr_mcumgr
 
       - name: Upload static files as artifact
