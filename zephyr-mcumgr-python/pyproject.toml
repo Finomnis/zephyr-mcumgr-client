@@ -5,13 +5,8 @@ build-backend = "maturin"
 [project]
 name = "zephyr-mcumgr"
 requires-python = ">=3.10"
-
-# Keep these dynamic as you requested
 dynamic = ["version", "description", "readme", "authors", "keywords"]
-
-# Dual-license using SPDX expression
 license = { text = "MIT OR Apache-2.0" }
-
 classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
