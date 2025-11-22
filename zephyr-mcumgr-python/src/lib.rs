@@ -121,6 +121,9 @@ impl MCUmgrClient {
     }
 
     /// Sets the RTC of the device to the given datetime.
+    ///
+    /// Uses the contained local time and discards timezone information.
+    ///
     pub fn os_set_datetime<'py>(&self, datetime: Bound<'py, PyDateTime>) -> PyResult<()> {
         self.lock()?
             .os_set_datetime(datetime.extract()?)
@@ -128,6 +131,9 @@ impl MCUmgrClient {
     }
 
     /// Retrieves the device RTC's datetime.
+    ///
+    /// Will not contain timezone information.
+    ///
     pub fn os_get_datetime<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyDateTime>> {
         self.lock()?
             .os_get_datetime()

@@ -118,10 +118,14 @@ class MCUmgrClient:
     def os_set_datetime(self, datetime: datetime.datetime) -> None:
         r"""
         Sets the RTC of the device to the given datetime.
+        
+        Uses the contained local time and discards timezone information.
         """
     def os_get_datetime(self) -> datetime.datetime:
         r"""
         Retrieves the device RTC's datetime.
+        
+        Will not contain timezone information.
         """
     def fs_file_download(self, name: builtins.str, progress: typing.Optional[collections.abc.Callable[[builtins.int, builtins.int], None]] = None) -> bytes:
         r"""
