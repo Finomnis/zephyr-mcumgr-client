@@ -38,7 +38,7 @@ print(client.os_echo("Hello world!"))
 Hello world!
 ```
 
-The API of `MCUmgrClient` closely follows the one of its [Rust counterpart](https://docs.rs/zephyr-mcumgr/0.0.1/zephyr_mcumgr/client/struct.MCUmgrClient.html).
+The API of `MCUmgrClient` closely follows the one of its [Rust counterpart](https://docs.rs/zephyr-mcumgr/latest/zephyr_mcumgr/client/struct.MCUmgrClient.html).
 
 ## Performance
 

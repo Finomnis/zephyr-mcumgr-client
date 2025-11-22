@@ -45,7 +45,7 @@ impl MCUmgrClient {
 impl MCUmgrClient {
     /// Creates a new serial port based Zephyr MCUmgr SMP client.
     ///
-    ///  # Arguments
+    /// ### Arguments
     ///
     /// * `serial` - The identifier of the serial device. (Windows: `COMxx`, Linux: `/dev/ttyXX`)
     /// * `baud_rate` - The baud rate of the serial port.
@@ -100,12 +100,12 @@ impl MCUmgrClient {
 
     /// Queries live task statistics
     ///
-    /// # Note
+    /// ### Note
     ///
     /// Converts `stkuse` and `stksiz` to bytes.
     /// Zephyr originally reports them as number of 4 byte words.
     ///
-    /// # Return
+    /// ### Return
     ///
     /// A map of task names with their respective statistics
     fn os_task_statistics(&self) -> PyResult<HashMap<String, TaskStatistics>> {
@@ -137,17 +137,17 @@ impl MCUmgrClient {
 
     /// Load a file from the device.
     ///
-    ///  # Arguments
+    /// ### Arguments
     ///
     /// * `name` - The full path of the file on the device.
     /// * `progress` - A callable object that takes (transmitted, total) values as parameters.
     ///                Any return value is ignored. Raising an exception aborts the operation.
     ///
-    /// # Return
+    /// ### Return
     ///
     /// The file content
     ///
-    /// # Performance
+    /// ### Performance
     ///
     /// Downloading files with Zephyr's default parameters is slow.
     /// You want to increase [`MCUMGR_TRANSPORT_NETBUF_SIZE`](https://github.com/zephyrproject-rtos/zephyr/blob/v4.2.1/subsys/mgmt/mcumgr/transport/Kconfig#L40)
@@ -187,14 +187,14 @@ impl MCUmgrClient {
 
     /// Write a file to the device.
     ///
-    ///  # Arguments
+    /// ### Arguments
     ///
     /// * `name` - The full path of the file on the device.
     /// * `data` - The file content.
     /// * `progress` - A callable object that takes (transmitted, total) values as parameters.
     ///                Any return value is ignored. Raising an exception aborts the operation.
     ///
-    /// # Performance
+    /// ### Performance
     ///
     /// Uploading files with Zephyr's default parameters is slow.
     /// You want to increase [`MCUMGR_TRANSPORT_NETBUF_SIZE`](https://github.com/zephyrproject-rtos/zephyr/blob/v4.2.1/subsys/mgmt/mcumgr/transport/Kconfig#L40)
@@ -245,7 +245,7 @@ impl MCUmgrClient {
     ///
     /// For available algorithms, see [`fs_supported_checksum_types()`](MCUmgrClient::fs_supported_checksum_types).
     ///
-    /// # Arguments
+    /// ### Arguments
     ///
     /// * `name` - The absolute path of the file on the device
     /// * `algorithm` - The hash/checksum algorithm to use, or default if None
@@ -287,11 +287,11 @@ impl MCUmgrClient {
 
     /// Run a shell command.
     ///
-    /// # Arguments
+    /// ### Arguments
     ///
     /// * `argv` - The shell command to be executed.
     ///
-    /// # Return
+    /// ### Return
     ///
     /// The command output
     ///
@@ -323,14 +323,14 @@ impl MCUmgrClient {
     /// Read Zephyr's [SMP Protocol Specification](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_protocol.html)
     /// for more information.
     ///
-    /// # Arguments
+    /// ### Arguments
     ///
     /// * `write_operation` - Whether the command is a read or write operation.
     /// * `group_id` - The group ID of the command
     /// * `command_id` - The command ID
     /// * `data` - Anything that can be serialized as a proper packet payload.
     ///
-    /// # Example
+    /// ### Example
     ///
     /// ```python
     /// client.raw_command(True, 0, 0, {"d": "Hello!"})
@@ -359,6 +359,16 @@ impl MCUmgrClient {
 mod zephyr_mcumgr {
     #[pymodule_export]
     use super::MCUmgrClient;
+    #[pymodule_export]
+    use super::return_types::FileChecksum;
+    #[pymodule_export]
+    use super::return_types::FileChecksumDataFormat;
+    #[pymodule_export]
+    use super::return_types::FileChecksumProperties;
+    #[pymodule_export]
+    use super::return_types::FileStatus;
+    #[pymodule_export]
+    use super::return_types::TaskStatistics;
 }
 
 // Define a function to gather stub information.
