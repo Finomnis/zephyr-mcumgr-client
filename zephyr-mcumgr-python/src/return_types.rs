@@ -6,7 +6,7 @@ use serde::Serialize;
 
 use crate::repr_macro::generate_repr_from_serialize;
 
-/// Return value of [`MCUmgrClient::fs_file_status`].
+/// Return value of `MCUmgrClient.fs_file_status`.
 #[gen_stub_pyclass]
 #[pyclass(frozen)]
 #[derive(Serialize)]
@@ -22,7 +22,7 @@ impl From<commands::fs::FileStatusResponse> for FileStatus {
     }
 }
 
-/// Return value of [`MCUmgrClient::fs_file_checksum`].
+/// Return value of `MCUmgrClient.fs_file_checksum`.
 #[gen_stub_pyclass]
 #[pyclass(frozen)]
 #[derive(Serialize)]

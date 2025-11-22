@@ -199,8 +199,8 @@ impl MCUmgrClient {
     ///
     /// Uploading files with Zephyr's default parameters is slow.
     /// You want to increase [`MCUMGR_TRANSPORT_NETBUF_SIZE`](https://github.com/zephyrproject-rtos/zephyr/blob/v4.2.1/subsys/mgmt/mcumgr/transport/Kconfig#L40)
-    /// to maybe `4096` and then enable larger chunking through either [`MCUmgrClient::set_frame_size`]
-    /// or [`MCUmgrClient::use_auto_frame_size`].
+    /// to maybe `4096` and then enable larger chunking through either `set_frame_size`
+    /// or `use_auto_frame_size`.
     #[pyo3(signature = (name, data, progress=None))]
     pub fn fs_file_upload<'py>(
         &self,
@@ -245,7 +245,7 @@ impl MCUmgrClient {
 
     /// Computes the hash/checksum of a file
     ///
-    /// For available algorithms, see [`fs_supported_checksum_types()`](MCUmgrClient::fs_supported_checksum_types).
+    /// For available algorithms, see `fs_supported_checksum_types`.
     ///
     /// ### Arguments
     ///
