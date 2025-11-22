@@ -1,11 +1,11 @@
 # Zephyr MCUmgr Client
 
 [![Crates.io](https://img.shields.io/crates/v/zephyr-mcumgr)](https://crates.io/crates/zephyr-mcumgr)
-[![PyPI - Version](https://img.shields.io/pypi/v/zephyr_mcumgr)](https://pypi.org/project/zephyr-mcumgr/)
-[![Crates.io](https://img.shields.io/crates/d/zephyr-mcumgr)](https://crates.io/crates/zephyr-mcumgr)
+[![PyPI - Version](https://img.shields.io/pypi/v/zephyr_mcumgr)](https://pypi.org/project/zephyr-mcumgr)
+[![PyPI - Downloads](https://img.shields.io/pypi/dw/zephyr-mcumgr)](https://pypi.org/project/zephyr-mcumgr)
 [![License](https://img.shields.io/crates/l/zephyr-mcumgr)](https://github.com/Finomnis/zephyr-mcumgr-client/blob/main/LICENSE-MIT)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/Finomnis/zephyr-mcumgr-client/ci.yml?branch=main)](https://github.com/Finomnis/zephyr-mcumgr-client/actions/workflows/ci.yml?query=branch%3Amain)
-[![docs.rs](https://img.shields.io/docsrs/zephyr-mcumgr)](https://docs.rs/zephyr-mcumgr)
+[![Docs Status](https://img.shields.io/github/actions/workflow/status/Finomnis/zephyr-mcumgr-client/python-docs.yml?branch=main&label=docs)](https://finomnis.github.io/zephyr-mcumgr-client)
 
 This library provides a Rust-based Python API for Zephyr's [MCUmgr protocol](https://docs.zephyrproject.org/latest/services/device_mgmt/mcumgr.html).
 
@@ -38,7 +38,7 @@ print(client.os_echo("Hello world!"))
 Hello world!
 ```
 
-The API of `MCUmgrClient` closely follows the one of its [Rust counterpart](https://docs.rs/zephyr-mcumgr/latest/zephyr_mcumgr/client/struct.MCUmgrClient.html).
+The API documentation of `MCUmgrClient` can be found [here](https://finomnis.github.io/zephyr-mcumgr-client).
 
 ## Performance
 
