@@ -1,0 +1,35 @@
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  release:
+    types: [published]
+
+name: Python Docs
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install dependencies
+        run: sudo apt-get install -y python3-dev
+
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install pdoc
+        run: pip3 install pdoc
+
+      - name: Build static files
+        run: |
+          pip3 install zephyr-mcumgr-python
+          pdoc -o zephyr-mcumgr-python/doc zephyr_mcumgr
+
+      - name: Upload static files as artifact
+        id: deployment
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: zephyr-mcumgr-python/doc
