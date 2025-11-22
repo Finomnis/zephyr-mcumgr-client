@@ -339,6 +339,7 @@ impl MCUmgrClient {
     /// ```
     ///
     /// Response:
+    ///
     /// ```none
     /// {'r': 'Hello!'}
     /// ```

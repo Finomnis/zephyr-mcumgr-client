@@ -227,6 +227,7 @@ class MCUmgrClient:
         ```
         
         Response:
+        
         ```none
         {'r': 'Hello!'}
         ```

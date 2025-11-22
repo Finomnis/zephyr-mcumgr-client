@@ -73,7 +73,6 @@ pub enum FileChecksumDataFormat {
     /// Data is a bytes array
     ByteArray = 1,
 }
-generate_repr_from_serialize!(FileChecksumDataFormat);
 
 /// Properties of a hash/checksum algorithm
 #[gen_stub_pyclass]
