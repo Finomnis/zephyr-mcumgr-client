@@ -1081,7 +1081,7 @@ dependencies = [
 [[package]]
 name = "pyo3-stub-gen"
 version = "0.18.0"
-source = "git+https://github.com/finomnis/pyo3-stub-gen.git?rev=5f8ea857b59cffb4ad3a56b1941e3196cb310341#5f8ea857b59cffb4ad3a56b1941e3196cb310341"
+source = "git+https://github.com/finomnis/pyo3-stub-gen.git?rev=1999efc189fe29e35d099acd5e5ec4a5d78190db#1999efc189fe29e35d099acd5e5ec4a5d78190db"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1103,7 +1103,7 @@ dependencies = [
 [[package]]
 name = "pyo3-stub-gen-derive"
 version = "0.18.0"
-source = "git+https://github.com/finomnis/pyo3-stub-gen.git?rev=5f8ea857b59cffb4ad3a56b1941e3196cb310341#5f8ea857b59cffb4ad3a56b1941e3196cb310341"
+source = "git+https://github.com/finomnis/pyo3-stub-gen.git?rev=1999efc189fe29e35d099acd5e5ec4a5d78190db#1999efc189fe29e35d099acd5e5ec4a5d78190db"
 dependencies = [
  "heck",
  "indexmap",
