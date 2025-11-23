@@ -8,6 +8,7 @@ use miette::Diagnostic;
 use thiserror::Error;
 
 use crate::{
+    bootloader::BootloaderInfo,
     commands::{self, fs::file_upload_max_data_chunk_size},
     connection::{Connection, ExecuteError},
     transport::serial::{ConfigurableTimeout, SerialTransport},
@@ -224,6 +225,31 @@ impl MCUmgrClient {
         self.connection
             .execute_command(&commands::os::ApplicationInfo { format })
             .map(|resp| resp.output)
+    }
+
+    /// Fetch information on the device's bootloader
+    pub fn os_bootloader_info(&mut self) -> Result<BootloaderInfo, ExecuteError> {
+        Ok(
+            match self
+                .connection
+                .execute_command(&commands::os::BootloaderInfo)?
+                .bootloader
+                .as_str()
+            {
+                "MCUboot" => {
+                    let mode_data = self
+                        .connection
+                        .execute_command(&commands::os::BootloaderInfoMcubootMode {})?;
+                    BootloaderInfo::MCUboot {
+                        mode: mode_data.mode,
+                        no_downgrade: mode_data.no_downgrade,
+                    }
+                }
+                name => BootloaderInfo::Unknown {
+                    name: name.to_string(),
+                },
+            },
+        )
     }
 
     /// Load a file from the device.

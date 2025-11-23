@@ -189,6 +189,15 @@ impl MCUmgrClient {
             .map_err(err_to_pyerr)
     }
 
+    /// Fetch information on the device's bootloader
+    pub fn os_bootloader_info<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        self.lock()?
+            .os_bootloader_info()
+            .map_err(err_to_pyerr)
+            .map(|info| serde_pyobject::to_pyobject(py, &info))?
+            .map_err(Into::into)
+    }
+
     /// Load a file from the device.
     ///
     /// ### Arguments

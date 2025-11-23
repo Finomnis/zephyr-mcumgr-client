@@ -19,6 +19,7 @@ use miette::Diagnostic;
 use thiserror::Error;
 use zephyr_mcumgr::{
     Errno, MCUmgrClient,
+    bootloader::{BootloaderInfo, MCUbootMode},
     client::{FileDownloadError, FileUploadError},
     commands::os::ThreadStateFlags,
     connection::ExecuteError,
@@ -226,6 +227,33 @@ fn cli_main() -> Result<(), CliError> {
                         client.os_application_info(Some(&flags.iter().collect::<String>()))?;
                     println!("{output}");
                 }
+            }
+            args::OsCommand::BootloaderInfo => {
+                let info = client.os_bootloader_info()?;
+
+                structured_print(Some("Bootloader Info".to_string()), args.json, |s| {
+                    match info {
+                        BootloaderInfo::MCUboot { mode, no_downgrade } => {
+                            s.key_value("Name", "MCUboot");
+
+                            let mode_name = if args.json {
+                                None
+                            } else {
+                                MCUbootMode::from_repr(mode)
+                            };
+
+                            if let Some(mode_name) = mode_name {
+                                s.key_value("Mode", format!("{mode} ({mode_name})"));
+                            } else {
+                                s.key_value("Mode", mode);
+                            }
+                            s.key_value("Downgrade Prevention", no_downgrade);
+                        }
+                        BootloaderInfo::Unknown { name } => {
+                            s.key_value("Name", name);
+                        }
+                    };
+                })?;
             }
         },
         Group::Fs { command } => match command {
