@@ -10,8 +10,8 @@ pub enum BootloaderInfo {
         /// Bootloader has downgrade prevention enabled
         no_downgrade: bool,
     },
-    /// Other bootloader
-    Other {
+    /// Unknown bootloader
+    Unknown {
         /// Name of the bootloader
         name: String,
     },
@@ -35,7 +35,7 @@ impl serde::Serialize for BootloaderInfo {
                 s.end()
             }
 
-            BootloaderInfo::Other { name } => {
+            BootloaderInfo::Unknown { name } => {
                 let mut s = serializer.serialize_struct(struct_name, 1)?;
                 s.serialize_field("name", name)?;
                 s.end()

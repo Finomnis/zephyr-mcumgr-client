@@ -249,7 +249,7 @@ fn cli_main() -> Result<(), CliError> {
                             }
                             s.key_value("Downgrade Prevention", no_downgrade);
                         }
-                        BootloaderInfo::Other { name } => {
+                        BootloaderInfo::Unknown { name } => {
                             s.key_value("Name", name);
                         }
                     };

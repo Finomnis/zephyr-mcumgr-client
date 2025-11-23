@@ -245,7 +245,7 @@ impl MCUmgrClient {
                         no_downgrade: mode_data.no_downgrade,
                     }
                 }
-                name => BootloaderInfo::Other {
+                name => BootloaderInfo::Unknown {
                     name: name.to_string(),
                 },
             },
