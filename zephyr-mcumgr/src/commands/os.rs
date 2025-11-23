@@ -355,7 +355,7 @@ mod tests {
     }
 
     command_encode_decode_test! {
-        datetime_system_reset_minimal,
+        system_reset_minimal,
         (2, 0, 5),
         SystemReset{
             force: false,
@@ -367,7 +367,7 @@ mod tests {
     }
 
     command_encode_decode_test! {
-        datetime_system_reset_full,
+        system_reset_full,
         (2, 0, 5),
         SystemReset{
             force: true,
