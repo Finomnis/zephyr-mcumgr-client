@@ -141,6 +141,26 @@ impl MCUmgrClient {
             .and_then(|datetime| datetime.into_pyobject(py))
     }
 
+    /// Issues a system reset.
+    ///
+    /// ### Arguments
+    ///
+    /// * `force` - Issues a force reset.
+    /// * `boot_mode` - Overwrites the default boot mode.
+    ///
+    /// Known `boot_mode` values:
+    /// * `0` - Normal system boot
+    /// * `1` - Bootloader recovery mode
+    ///
+    /// Note that `boot_mode` only works if [`MCUMGR_GRP_OS_RESET_BOOT_MODE`](https://docs.zephyrproject.org/latest/kconfig.html#CONFIG_MCUMGR_GRP_OS_RESET_BOOT_MODE) is enabled.
+    ///
+    #[pyo3(signature = (force=false, boot_mode=None))]
+    pub fn os_system_reset(&self, force: bool, boot_mode: Option<u8>) -> PyResult<()> {
+        self.lock()?
+            .os_system_reset(force, boot_mode)
+            .map_err(err_to_pyerr)
+    }
+
     /// Load a file from the device.
     ///
     /// ### Arguments

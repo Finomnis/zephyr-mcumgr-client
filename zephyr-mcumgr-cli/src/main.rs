@@ -90,12 +90,7 @@ fn cli_main() -> Result<(), CliError> {
 
     match args.group {
         Group::Os { command } => match command {
-            args::OsCommand::Echo { msg } => println!(
-                "{}",
-                client
-                    .os_echo(msg)
-                    .map_err(CliError::CommandExecutionFailed)?
-            ),
+            args::OsCommand::Echo { msg } => println!("{}", client.os_echo(msg)?),
             args::OsCommand::TaskStatistics => {
                 let tasks_map = client.os_task_statistics()?;
 
@@ -168,23 +163,22 @@ fn cli_main() -> Result<(), CliError> {
                     }
                 };
 
-                client
-                    .os_set_datetime(datetime_value)
-                    .map_err(CliError::CommandExecutionFailed)?;
+                client.os_set_datetime(datetime_value)?;
 
                 if args.verbose {
                     println!("Set device time to: {}", datetime_value.format("%F %T"));
                 }
             }
             args::OsCommand::GetDatetime => {
-                let datetime = client
-                    .os_get_datetime()
-                    .map_err(CliError::CommandExecutionFailed)?;
+                let datetime = client.os_get_datetime()?;
                 if args.verbose {
                     println!("Device time: {}", datetime);
                 } else {
                     println!("{:?}", datetime);
                 }
+            }
+            args::OsCommand::SystemReset { force, bootmode } => {
+                client.os_system_reset(force, bootmode)?;
             }
         },
         Group::Fs { command } => match command {

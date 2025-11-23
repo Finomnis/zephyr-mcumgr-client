@@ -178,9 +178,32 @@ impl MCUmgrClient {
             .map(|val| val.datetime)
     }
 
+    /// Issues a system reset.
+    ///
+    /// # Arguments
+    ///
+    /// * `force` - Issues a force reset.
+    /// * `boot_mode` - Overwrites the boot mode.
+    ///
+    /// Known `boot_mode` values:
+    /// * `0` - Normal system boot
+    /// * `1` - Bootloader recovery mode
+    ///
+    /// Note that `boot_mode` only works if [`MCUMGR_GRP_OS_RESET_BOOT_MODE`](https://docs.zephyrproject.org/latest/kconfig.html#CONFIG_MCUMGR_GRP_OS_RESET_BOOT_MODE) is enabled.
+    ///
+    pub fn os_system_reset(
+        &mut self,
+        force: bool,
+        boot_mode: Option<u8>,
+    ) -> Result<(), ExecuteError> {
+        self.connection
+            .execute_command(&commands::os::SystemReset { force, boot_mode })
+            .map(Into::into)
+    }
+
     /// Load a file from the device.
     ///
-    ///  # Arguments
+    /// # Arguments
     ///
     /// * `name` - The full path of the file on the device.
     /// * `writer` - A [`Write`] object that the file content will be written to.
@@ -252,7 +275,7 @@ impl MCUmgrClient {
 
     /// Write a file to the device.
     ///
-    ///  # Arguments
+    /// # Arguments
     ///
     /// * `name` - The full path of the file on the device.
     /// * `reader` - A [`Read`] object that contains the file content.

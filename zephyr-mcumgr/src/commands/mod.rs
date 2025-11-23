@@ -55,6 +55,7 @@ impl_mcumgr_command!((read,  MGMT_GROUP_ID_OS, 0): os::Echo<'_> => os::EchoRespo
 impl_mcumgr_command!((read,  MGMT_GROUP_ID_OS, 2): os::TaskStatistics => os::TaskStatisticsResponse);
 impl_mcumgr_command!((read,  MGMT_GROUP_ID_OS, 4): os::DateTimeGet => os::DateTimeGetResponse);
 impl_mcumgr_command!((write, MGMT_GROUP_ID_OS, 4): os::DateTimeSet => os::DateTimeSetResponse);
+impl_mcumgr_command!((write, MGMT_GROUP_ID_OS, 5): os::SystemReset => os::SystemResetResponse);
 impl_mcumgr_command!((read,  MGMT_GROUP_ID_OS, 6): os::MCUmgrParameters => os::MCUmgrParametersResponse);
 
 impl_mcumgr_command!((write, MGMT_GROUP_ID_FS, 0): fs::FileUpload<'_, '_> => fs::FileUploadResponse);

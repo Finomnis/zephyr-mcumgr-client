@@ -127,6 +127,21 @@ class MCUmgrClient:
         
         Will not contain timezone information.
         """
+    def os_system_reset(self, force: builtins.bool = False, boot_mode: typing.Optional[builtins.int] = None) -> None:
+        r"""
+        Issues a system reset.
+        
+        ### Arguments
+        
+        * `force` - Issues a force reset.
+        * `boot_mode` - Overwrites the default boot mode.
+        
+        Known `boot_mode` values:
+        * `0` - Normal system boot
+        * `1` - Bootloader recovery mode
+        
+        Note that `boot_mode` only works if [`MCUMGR_GRP_OS_RESET_BOOT_MODE`](https://docs.zephyrproject.org/latest/kconfig.html#CONFIG_MCUMGR_GRP_OS_RESET_BOOT_MODE) is enabled.
+        """
     def fs_file_download(self, name: builtins.str, progress: typing.Optional[collections.abc.Callable[[builtins.int, builtins.int], None]] = None) -> bytes:
         r"""
         Load a file from the device.

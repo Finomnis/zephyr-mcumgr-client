@@ -3,8 +3,9 @@ use std::collections::HashMap;
 use chrono::Timelike;
 use serde::{Deserialize, Serialize};
 
-use crate::commands::macros::{
-    impl_deserialize_from_empty_map_and_into_unit, impl_serialize_as_empty_map,
+use super::{
+    is_default,
+    macros::{impl_deserialize_from_empty_map_and_into_unit, impl_serialize_as_empty_map},
 };
 
 /// [Echo](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_groups/smp_group_0.html#echo-command) command
@@ -174,6 +175,26 @@ pub struct MCUmgrParametersResponse {
     pub buf_count: u32,
 }
 
+/// [System Reset](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_groups/smp_group_0.html#system-reset) command
+#[derive(Serialize, Debug, Eq, PartialEq)]
+pub struct SystemReset {
+    /// Forces reset
+    #[serde(skip_serializing_if = "is_default")]
+    pub force: bool,
+    /// Boot mode
+    ///
+    /// - 0: Normal boot
+    /// - 1: Bootloader recovery mode
+    ///
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub boot_mode: Option<u8>,
+}
+
+/// Response for [`SystemReset`] command
+#[derive(Default, Debug, Eq, PartialEq)]
+pub struct SystemResetResponse;
+impl_deserialize_from_empty_map_and_into_unit!(SystemResetResponse);
+
 #[cfg(test)]
 mod tests {
     use super::super::macros::command_encode_decode_test;
@@ -331,6 +352,33 @@ mod tests {
         }),
         cbor!({}),
         DateTimeSetResponse,
+    }
+
+    command_encode_decode_test! {
+        datetime_system_reset_minimal,
+        (2, 0, 5),
+        SystemReset{
+            force: false,
+            boot_mode: None,
+        },
+        cbor!({}),
+        cbor!({}),
+        SystemResetResponse,
+    }
+
+    command_encode_decode_test! {
+        datetime_system_reset_full,
+        (2, 0, 5),
+        SystemReset{
+            force: true,
+            boot_mode: Some(42),
+        },
+        cbor!({
+            "force" => true,
+            "boot_mode" => 42,
+        }),
+        cbor!({}),
+        SystemResetResponse,
     }
 
     command_encode_decode_test! {
