@@ -80,6 +80,8 @@ pub enum OsCommand {
     /// Specify one or more flags to get the raw output
     /// without any post-processing.
     ApplicationInfo(#[command(flatten)] ApplicationInfoFlags),
+    /// Fetch information on the running bootloader
+    BootloaderInfo,
 }
 
 #[derive(Debug, Args)]
