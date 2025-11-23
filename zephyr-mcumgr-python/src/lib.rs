@@ -10,21 +10,25 @@ use pyo3_stub_gen::{
     derive::{gen_stub_pyclass, gen_stub_pymethods},
 };
 use std::collections::HashMap;
-use std::sync::{Mutex, MutexGuard};
+use std::sync::Mutex;
 use std::time::Duration;
 
 use crate::raw_py_any_command::RawPyAnyCommand;
 
-mod raw_py_any_command;
-mod repr_macro;
+mod locked_client;
+use locked_client::LockedClient;
+
 mod return_types;
 pub use return_types::*;
+
+mod raw_py_any_command;
+mod repr_macro;
 
 /// A high level client for Zephyr's MCUmgr SMP functionality
 #[gen_stub_pyclass]
 #[pyclass(frozen)]
 struct MCUmgrClient {
-    client: Mutex<::zephyr_mcumgr::MCUmgrClient>,
+    client: Mutex<Option<::zephyr_mcumgr::MCUmgrClient>>,
 }
 
 fn err_to_pyerr<E: Into<miette::Report>>(err: E) -> PyErr {
@@ -33,10 +37,8 @@ fn err_to_pyerr<E: Into<miette::Report>>(err: E) -> PyErr {
 }
 
 impl MCUmgrClient {
-    fn lock(&self) -> PyResult<MutexGuard<'_, ::zephyr_mcumgr::MCUmgrClient>> {
-        self.client
-            .lock()
-            .map_err(|e| PyRuntimeError::new_err(format!("{e}")))
+    fn lock(&self) -> PyResult<LockedClient<'_>> {
+        LockedClient::lock(&self.client)
     }
 }
 
@@ -53,7 +55,7 @@ impl MCUmgrClient {
     ///
     #[staticmethod]
     #[pyo3(signature = (serial, baud_rate=115200, timeout_ms=500))]
-    fn new_from_serial(serial: &str, baud_rate: u32, timeout_ms: u64) -> PyResult<Self> {
+    fn serial(serial: &str, baud_rate: u32, timeout_ms: u64) -> PyResult<Self> {
         let serial = serialport::new(serial, baud_rate)
             .timeout(Duration::from_millis(timeout_ms))
             .open()
@@ -61,7 +63,7 @@ impl MCUmgrClient {
             .map_err(err_to_pyerr)?;
         let client = ::zephyr_mcumgr::MCUmgrClient::new_from_serial(serial);
         Ok(MCUmgrClient {
-            client: Mutex::new(client),
+            client: Mutex::new(Some(client)),
         })
     }
 
@@ -403,6 +405,21 @@ impl MCUmgrClient {
         let result = self.lock()?.raw_command(&command).map_err(err_to_pyerr)?;
         RawPyAnyCommand::convert_result(py, result)
     }
+
+    fn __enter__(slf: PyRef<Self>) -> PyResult<PyRef<Self>> {
+        Ok(slf)
+    }
+
+    /// Closes the connection
+    fn __exit__(
+        &self,
+        _exc_type: Py<PyAny>,
+        _exc_value: Py<PyAny>,
+        _traceback: Py<PyAny>,
+    ) -> PyResult<bool> {
+        self.lock()?.close();
+        Ok(false)
+    }
 }
 
 /// ### Example
@@ -410,12 +427,12 @@ impl MCUmgrClient {
 /// ```python
 /// from zephyr_mcumgr import MCUmgrClient
 ///
-/// client = MCUmgrClient.new_from_serial("COM42")
-/// client.set_timeout_ms(500)
-/// client.use_auto_frame_size()
+/// with MCUmgrClient.serial("/dev/ttyACM0") as client:
+///     client.set_timeout_ms(500)
+///     client.use_auto_frame_size()
 ///
-/// print(client.os_echo("Hello world!"))
-/// # Hello world!
+///     print(client.os_echo("Hello world!"))
+///     # Hello world!
 /// ```
 ///
 #[pymodule]
