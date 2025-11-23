@@ -228,26 +228,33 @@ fn cli_main() -> Result<(), CliError> {
                     println!("{output}");
                 }
             }
-            args::OsCommand::BootloaderInfo => match client.os_bootloader_info()? {
-                BootloaderInfo::MCUboot { mode, no_downgrade } => {
-                    structured_print(Some("Bootloader Info".to_string()), args.json, |s| {
-                        s.key_value("Name", "MCUboot");
-                        if !args.json
-                            && let Some(mode_name) = MCUbootMode::from_repr(mode)
-                        {
-                            s.key_value("Mode", format!("{mode} ({mode_name})"));
-                        } else {
-                            s.key_value("Mode", mode);
+            args::OsCommand::BootloaderInfo => {
+                let info = client.os_bootloader_info()?;
+
+                structured_print(Some("Bootloader Info".to_string()), args.json, |s| {
+                    match info {
+                        BootloaderInfo::MCUboot { mode, no_downgrade } => {
+                            s.key_value("Name", "MCUboot");
+
+                            let mode_name = if args.json {
+                                None
+                            } else {
+                                MCUbootMode::from_repr(mode)
+                            };
+
+                            if let Some(mode_name) = mode_name {
+                                s.key_value("Mode", format!("{mode} ({mode_name})"));
+                            } else {
+                                s.key_value("Mode", mode);
+                            }
+                            s.key_value("Downgrade Prevention", no_downgrade);
                         }
-                        s.key_value("Downgrade Prevention", no_downgrade);
-                    })?;
-                }
-                BootloaderInfo::Other { name } => {
-                    structured_print(Some("Bootloader Info".to_string()), args.json, |s| {
-                        s.key_value("Name", name);
-                    })?;
-                }
-            },
+                        BootloaderInfo::Other { name } => {
+                            s.key_value("Name", name);
+                        }
+                    };
+                })?;
+            }
         },
         Group::Fs { command } => match command {
             args::FsCommand::Download { remote, local } => {
