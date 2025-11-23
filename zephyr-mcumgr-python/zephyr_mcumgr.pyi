@@ -159,6 +159,10 @@ class MCUmgrClient:
         For more information about the format specifier fields, see
         the [SMP documentation](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_groups/smp_group_0.html#os-application-info-request).
         """
+    def os_bootloader_info(self) -> typing.Any:
+        r"""
+        Fetch information on the device's bootloader
+        """
     def fs_file_download(self, name: builtins.str, progress: typing.Optional[collections.abc.Callable[[builtins.int, builtins.int], None]] = None) -> bytes:
         r"""
         Load a file from the device.

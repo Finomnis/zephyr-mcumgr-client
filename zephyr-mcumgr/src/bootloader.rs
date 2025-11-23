@@ -1,4 +1,7 @@
+use serde::Serialize;
+
 /// Information about the bootloader
+#[derive(Serialize)]
 pub enum BootloaderInfo {
     /// MCUboot bootloader
     MCUboot {
