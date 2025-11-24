@@ -205,7 +205,7 @@ fn cli_main() -> Result<(), CliError> {
                     let build_time = match client.os_application_info(Some("b")) {
                         Ok(val) => Some(val),
                         Err(ExecuteError::ErrorResponse(e)) => {
-                            log::debug!("Failed to fetch build time: {:?}", e);
+                            log::debug!("Failed to fetch build time: {e}");
                             None
                         }
                         Err(e) => Err(e)?,
