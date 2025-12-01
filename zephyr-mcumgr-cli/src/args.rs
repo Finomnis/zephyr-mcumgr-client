@@ -19,9 +19,9 @@ pub struct App {
     #[arg(short, long, default_value_t = 500)]
     pub timeout: u64,
 
-    /// Show progress bar for data transfer commands
+    /// Hide progress bar for data transfer commands
     #[arg(short, long)]
-    pub progress: bool,
+    pub quiet: bool,
 
     /// Increase the verbosity of some commands
     #[arg(short, long)]

@@ -265,14 +265,14 @@ fn cli_main() -> Result<(), CliError> {
         Group::Fs { command } => match command {
             args::FsCommand::Download { remote, local } => {
                 let mut data = vec![];
-                with_progress_bar(args.progress, Some(&remote), |progress| {
+                with_progress_bar(!args.quiet, Some(&remote), |progress| {
                     client.fs_file_download(remote.as_str(), &mut data, progress)
                 })?;
                 write_output_file(&local, &data)?;
             }
             args::FsCommand::Upload { local, remote } => {
                 let data = read_input_file(&local)?;
-                with_progress_bar(args.progress, Some(&remote), |progress| {
+                with_progress_bar(!args.quiet, Some(&remote), |progress| {
                     client.fs_file_upload(remote.as_str(), &*data, data.len() as u64, progress)
                 })?;
             }
