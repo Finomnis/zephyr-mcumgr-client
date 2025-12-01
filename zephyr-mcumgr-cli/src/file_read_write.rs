@@ -25,7 +25,7 @@ pub fn read_input_file(filename: &str) -> Result<(Box<[u8]>, Option<String>), Cl
         Ok((data.into_boxed_slice(), None))
     } else {
         let file_path: &Path = filename.as_ref();
-        let mut file = File::open(filename).map_err(CliError::InputReadFailed)?;
+        let mut file = File::open(file_path).map_err(CliError::InputReadFailed)?;
 
         let mut data = if let Ok(file_size) = file.metadata().map(|m| m.len() as usize) {
             Vec::with_capacity(file_size)
