@@ -54,6 +54,9 @@ pub enum CliError {
     #[error("Failed to write the output data")]
     #[diagnostic(code(zephyr_mcumgr::cli::output))]
     OutputWriteFailed(#[source] std::io::Error),
+    #[error("Unable to determine output file name")]
+    #[diagnostic(code(zephyr_mcumgr::cli::destination_unknown))]
+    DestinationFilenameUnknown,
     #[error("File upload failed")]
     #[diagnostic(code(zephyr_mcumgr::cli::file_upload))]
     FileUploadFailed(#[from] FileUploadError),
@@ -268,10 +271,20 @@ fn cli_main() -> Result<(), CliError> {
                 with_progress_bar(!args.quiet, Some(&remote), |progress| {
                     client.fs_file_download(remote.as_str(), &mut data, progress)
                 })?;
-                write_output_file(&local, &data)?;
+
+                let filename = remote.rsplit('/').next().filter(|s| !s.is_empty());
+
+                write_output_file(&local, filename, &data)?;
             }
-            args::FsCommand::Upload { local, remote } => {
-                let data = read_input_file(&local)?;
+            args::FsCommand::Upload { local, mut remote } => {
+                let (data, source_filename) = read_input_file(&local)?;
+
+                if remote.ends_with("/") {
+                    let filename =
+                        source_filename.ok_or_else(|| CliError::DestinationFilenameUnknown)?;
+                    remote.push_str(&filename);
+                }
+
                 with_progress_bar(!args.quiet, Some(&remote), |progress| {
                     client.fs_file_upload(remote.as_str(), &*data, data.len() as u64, progress)
                 })?;
