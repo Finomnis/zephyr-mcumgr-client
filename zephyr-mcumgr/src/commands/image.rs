@@ -1,0 +1,130 @@
+use serde::Deserialize;
+
+use crate::commands::macros::impl_serialize_as_empty_map;
+
+/// The state of an image slot
+#[derive(Debug, Deserialize, Eq, PartialEq)]
+pub struct ImageStateEntry {
+    /// image number
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub image: u64,
+    /// slot number within “image”
+    pub slot: u64,
+    /// string representing image version, as set with `imgtool`
+    pub version: String,
+    /// SHA256 hash of the image header and body
+    ///
+    /// Note that this will not be the same as the SHA256 of the whole file, it is the field in the
+    /// MCUboot TLV section that contains a hash of the data which is used for signature
+    /// verification purposes.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub hash: Option<[u8; 32]>,
+    /// true if image has bootable flag set
+    #[serde(default, skip_serializing_if = "is_default")]
+    bootable: bool,
+    /// true if image is set for next swap
+    #[serde(default, skip_serializing_if = "is_default")]
+    pending: bool,
+    /// true if image has been confirmed
+    #[serde(default, skip_serializing_if = "is_default")]
+    confirmed: bool,
+    /// true if image is currently active application
+    #[serde(default, skip_serializing_if = "is_default")]
+    active: bool,
+    /// true if image is to stay in primary slot after the next boot
+    #[serde(default, skip_serializing_if = "is_default")]
+    permanent: bool,
+}
+
+/// [Get Image State](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_groups/smp_group_1.html#get-state-of-images-request) command
+#[derive(Debug, Eq, PartialEq)]
+pub struct GetImageState;
+impl_serialize_as_empty_map!(GetImageState);
+
+/// Response for [`GetImageState`] command
+#[derive(Debug, Deserialize, Eq, PartialEq)]
+pub struct GetImageStateResponse {
+    /// chunk of data read from file
+    pub images: Vec<ImageStateEntry>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::super::macros::command_encode_decode_test;
+    use super::*;
+    use ciborium::cbor;
+
+    command_encode_decode_test! {
+        get_image_state,
+        (0, 1, 0),
+        GetImageState,
+        cbor!({}),
+        cbor!({
+            "images" => [
+                {
+                    "image" => 3,
+                    "slot" => 5,
+                    "version" => "v1.2.3",
+                    "hash" => ciborium::Value::Bytes(vec![1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32]),
+                    "bootable" => true,
+                    "pending" => true,
+                    "confirmed" => true,
+                    "active" => true,
+                    "permanent" => true,
+                },
+                {
+                    "image" => 4,
+                    "slot" => 6,
+                    "version" => "v5.5.5",
+                    "bootable" => false,
+                    "pending" => false,
+                    "confirmed" => false,
+                    "active" => false,
+                    "permanent" => false,
+                },
+                {
+                    "slot" => 9,
+                    "version" => "8.6.4",
+                },
+            ],
+            "splitStatus" => 42,
+        }),
+        GetImageStateResponse{
+            images: vec![
+                ImageStateEntry{
+                    image: 3,
+                    slot: 5,
+                    version: "v1.2.3".to_string(),
+                    hash: Some([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32]),
+                    bootable: true,
+                    pending: true,
+                    confirmed: true,
+                    active: true,
+                    permanent: true,
+                },
+                ImageStateEntry{
+                    image: 4,
+                    slot: 6,
+                    version: "v5.5.5".to_string(),
+                    hash: None,
+                    bootable: false,
+                    pending: false,
+                    confirmed: false,
+                    active: false,
+                    permanent: false,
+                },
+                ImageStateEntry{
+                    image: 0,
+                    slot: 9,
+                    version: "8.6.4".to_string(),
+                    hash: None,
+                    bootable: false,
+                    pending: false,
+                    confirmed: false,
+                    active: false,
+                    permanent: false,
+                }
+            ],
+        },
+    }
+}
