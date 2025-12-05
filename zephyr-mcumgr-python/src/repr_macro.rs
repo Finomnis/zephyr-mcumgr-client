@@ -35,4 +35,18 @@ where
     })
 }
 
+pub fn serialize_option_pybytes_as_hex<S>(
+    pybytes: &Option<Py<PyBytes>>,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    if let Some(pybytes) = &pybytes {
+        serialize_pybytes_as_hex(pybytes, serializer)
+    } else {
+        serializer.serialize_none()
+    }
+}
+
 pub(crate) use generate_repr_from_serialize;
