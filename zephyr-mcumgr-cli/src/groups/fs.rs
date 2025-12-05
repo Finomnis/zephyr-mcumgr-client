@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use zephyr_mcumgr::MCUmgrClient;
 
 use crate::{
@@ -101,7 +103,11 @@ pub fn run(client: &MCUmgrClient, args: CommonArgs, command: FsCommand) -> Resul
             }
         }
         FsCommand::SupportedChecksums => {
-            let checksums = client.fs_supported_checksum_types()?;
+            let checksums = client
+                .fs_supported_checksum_types()?
+                .into_iter()
+                // Sort
+                .collect::<BTreeMap<_, _>>();
 
             if args.json || args.verbose {
                 structured_print(None, args.json, |s| {
