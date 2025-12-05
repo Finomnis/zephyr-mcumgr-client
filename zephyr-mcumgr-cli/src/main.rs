@@ -39,10 +39,7 @@ fn cli_main() -> Result<(), CliError> {
         log::warn!("Hint: Make sure that `CONFIG_MCUMGR_GRP_OS_MCUMGR_PARAMS` is enabled.");
     }
 
-    let group = args.group;
-    let args = args.common;
-
-    groups::run(&client, args, group)
+    groups::run(&client, args.common, args.group)
 }
 
 fn main() -> miette::Result<()> {
