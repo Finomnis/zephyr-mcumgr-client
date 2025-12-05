@@ -27,7 +27,7 @@ pub struct ImageState {
     /// Note that this will not be the same as the SHA256 of the whole file, it is the field in the
     /// MCUboot TLV section that contains a hash of the data which is used for signature
     /// verification purposes.
-    #[serde(serialize_with = "serialize_option_hex")]
+    #[serde(serialize_with = "serialize_option_hex")] // For JSON (cli)
     pub hash: Option<[u8; 32]>,
     /// true if image has bootable flag set
     #[serde(default)]
