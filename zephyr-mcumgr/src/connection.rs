@@ -22,11 +22,11 @@ pub struct Connection {
 /// Errors that can happen on SMP protocol level
 #[derive(Error, Debug, Diagnostic)]
 pub enum ExecuteError {
-    /// An error happend on SMP transport level while sending a request
+    /// An error happened on SMP transport level while sending a request
     #[error("Sending failed")]
     #[diagnostic(code(zephyr_mcumgr::connection::execute::send))]
     SendFailed(#[from] SendError),
-    /// An error happend on SMP transport level while receiving a response
+    /// An error happened on SMP transport level while receiving a response
     #[error("Receiving failed")]
     #[diagnostic(code(zephyr_mcumgr::connection::execute::receive))]
     ReceiveFailed(#[from] ReceiveError),

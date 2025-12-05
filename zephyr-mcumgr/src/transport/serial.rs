@@ -117,9 +117,17 @@ where
 
         loop {
             while self.read_buffer.occupied_len() < 2 {
-                self.read_buffer
+                let num_read = self
+                    .read_buffer
                     .read_from(&mut self.serial, None)
                     .unwrap()?;
+
+                if num_read == 0 {
+                    return Err(ReceiveError::TransportError(std::io::Error::new(
+                        std::io::ErrorKind::UnexpectedEof,
+                        "Serial port unexpectedly returned end-of-file",
+                    )));
+                }
             }
 
             let current = self.read_buffer.try_pop().unwrap();
