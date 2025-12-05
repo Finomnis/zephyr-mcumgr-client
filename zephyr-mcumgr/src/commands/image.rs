@@ -1,9 +1,11 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::commands::macros::impl_serialize_as_empty_map;
 
+use super::is_default;
+
 /// The state of an image slot
-#[derive(Debug, Deserialize, Eq, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
 pub struct ImageStateEntry {
     /// image number
     #[serde(default, skip_serializing_if = "is_default")]
@@ -21,19 +23,19 @@ pub struct ImageStateEntry {
     pub hash: Option<[u8; 32]>,
     /// true if image has bootable flag set
     #[serde(default, skip_serializing_if = "is_default")]
-    bootable: bool,
+    pub bootable: bool,
     /// true if image is set for next swap
     #[serde(default, skip_serializing_if = "is_default")]
-    pending: bool,
+    pub pending: bool,
     /// true if image has been confirmed
     #[serde(default, skip_serializing_if = "is_default")]
-    confirmed: bool,
+    pub confirmed: bool,
     /// true if image is currently active application
     #[serde(default, skip_serializing_if = "is_default")]
-    active: bool,
+    pub active: bool,
     /// true if image is to stay in primary slot after the next boot
     #[serde(default, skip_serializing_if = "is_default")]
-    permanent: bool,
+    pub permanent: bool,
 }
 
 /// [Get Image State](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_groups/smp_group_1.html#get-state-of-images-request) command
