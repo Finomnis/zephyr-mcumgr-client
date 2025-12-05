@@ -254,9 +254,7 @@ impl MCUmgrClient {
     }
 
     /// Obtain a list of images with their current state.
-    pub fn img_get_image_state(
-        &self,
-    ) -> Result<Vec<commands::image::ImageStateEntry>, ExecuteError> {
+    pub fn image_get_state(&self) -> Result<Vec<commands::image::ImageStateEntry>, ExecuteError> {
         self.connection
             .execute_command(&commands::image::GetImageState)
             .map(|val| val.images)

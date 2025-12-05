@@ -2,13 +2,21 @@ use serde::{Deserialize, Serialize};
 
 use crate::commands::macros::impl_serialize_as_empty_map;
 
-use super::is_default;
+fn serialize_option_hex<S, T>(data: &Option<T>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+    T: hex::ToHex,
+{
+    data.as_ref()
+        .map(|val| val.encode_hex::<String>())
+        .serialize(serializer)
+}
 
 /// The state of an image slot
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
 pub struct ImageStateEntry {
     /// image number
-    #[serde(default, skip_serializing_if = "is_default")]
+    #[serde(default)]
     pub image: u64,
     /// slot number within “image”
     pub slot: u64,
@@ -19,22 +27,22 @@ pub struct ImageStateEntry {
     /// Note that this will not be the same as the SHA256 of the whole file, it is the field in the
     /// MCUboot TLV section that contains a hash of the data which is used for signature
     /// verification purposes.
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(serialize_with = "serialize_option_hex")]
     pub hash: Option<[u8; 32]>,
     /// true if image has bootable flag set
-    #[serde(default, skip_serializing_if = "is_default")]
+    #[serde(default)]
     pub bootable: bool,
     /// true if image is set for next swap
-    #[serde(default, skip_serializing_if = "is_default")]
+    #[serde(default)]
     pub pending: bool,
     /// true if image has been confirmed
-    #[serde(default, skip_serializing_if = "is_default")]
+    #[serde(default)]
     pub confirmed: bool,
     /// true if image is currently active application
-    #[serde(default, skip_serializing_if = "is_default")]
+    #[serde(default)]
     pub active: bool,
     /// true if image is to stay in primary slot after the next boot
-    #[serde(default, skip_serializing_if = "is_default")]
+    #[serde(default)]
     pub permanent: bool,
 }
 
