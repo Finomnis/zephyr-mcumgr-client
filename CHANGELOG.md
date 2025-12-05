@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.2] - xxxx-xx-xx
+
+### Changes
+
+- Make all functions in `MCUmgrClient` `&self` instead of `&mut self`
+- Fix: Python status callbacks deadlock when they call `MCUmgrClient` functions
+- Fix: Infinite loop if serial port returns EOF
+
 ## [0.4.1] - 2025-12-02
 
 ### Changes
@@ -142,6 +150,7 @@ Initial release, not feature complete yet.
 
 Primarily to test release workflow.
 
+[0.4.2]: https://github.com/Finomnis/zephyr-mcumgr-client/compare/0.4.1...0.4.2
 [0.4.1]: https://github.com/Finomnis/zephyr-mcumgr-client/compare/0.4.0...0.4.1
 [0.4.0]: https://github.com/Finomnis/zephyr-mcumgr-client/compare/0.3.1...0.4.0
 [0.3.1]: https://github.com/Finomnis/zephyr-mcumgr-client/compare/0.3.0...0.3.1
