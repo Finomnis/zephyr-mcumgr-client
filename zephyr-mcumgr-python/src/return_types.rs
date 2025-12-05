@@ -210,10 +210,7 @@ pub struct ImageState {
 generate_repr_from_serialize!(ImageState);
 
 impl ImageState {
-    pub(crate) fn from_response<'py>(
-        py: Python<'py>,
-        value: commands::image::ImageStateEntry,
-    ) -> Self {
+    pub(crate) fn from_response<'py>(py: Python<'py>, value: commands::image::ImageState) -> Self {
         Self {
             image: value.image,
             slot: value.slot,

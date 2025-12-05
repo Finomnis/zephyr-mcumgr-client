@@ -14,7 +14,7 @@ where
 
 /// The state of an image slot
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
-pub struct ImageStateEntry {
+pub struct ImageState {
     /// image number
     #[serde(default)]
     pub image: u64,
@@ -55,7 +55,7 @@ impl_serialize_as_empty_map!(GetImageState);
 #[derive(Debug, Deserialize, Eq, PartialEq)]
 pub struct GetImageStateResponse {
     /// chunk of data read from file
-    pub images: Vec<ImageStateEntry>,
+    pub images: Vec<ImageState>,
 }
 
 #[cfg(test)]
@@ -101,7 +101,7 @@ mod tests {
         }),
         GetImageStateResponse{
             images: vec![
-                ImageStateEntry{
+                ImageState{
                     image: 3,
                     slot: 5,
                     version: "v1.2.3".to_string(),
@@ -112,7 +112,7 @@ mod tests {
                     active: true,
                     permanent: true,
                 },
-                ImageStateEntry{
+                ImageState{
                     image: 4,
                     slot: 6,
                     version: "v5.5.5".to_string(),
@@ -123,7 +123,7 @@ mod tests {
                     active: false,
                     permanent: false,
                 },
-                ImageStateEntry{
+                ImageState{
                     image: 0,
                     slot: 9,
                     version: "8.6.4".to_string(),
