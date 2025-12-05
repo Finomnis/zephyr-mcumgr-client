@@ -128,7 +128,7 @@ macro_rules! impl_deserialize_from_empty_map_and_into_unit {
                         let mut had_entries = false;
 
                         while map
-                            .next_entry::<serde::de::IgnoredAny, serde::de::IgnoredAny>()?
+                            .next_entry::<::serde::de::IgnoredAny, ::serde::de::IgnoredAny>()?
                             .is_some()
                         {
                             had_entries = true;
@@ -136,7 +136,9 @@ macro_rules! impl_deserialize_from_empty_map_and_into_unit {
 
                         // Do not error when there is an entry; we also accept non-empty maps for future compatibility.
                         if had_entries {
-                            log::debug!("Ignoring unexpected entries in unit-type deserialization");
+                            ::log::debug!(
+                                "Ignoring unexpected entries in unit-type deserialization"
+                            );
                         }
 
                         Ok(<$type>::default())
