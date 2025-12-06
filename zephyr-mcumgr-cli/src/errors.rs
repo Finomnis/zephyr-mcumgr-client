@@ -3,7 +3,7 @@ use thiserror::Error;
 
 use zephyr_mcumgr::{
     Errno,
-    client::{FileDownloadError, FileUploadError},
+    client::{FileDownloadError, FileUploadError, UsbSerialError},
     connection::ExecuteError,
 };
 
@@ -16,9 +16,9 @@ pub enum CliError {
     #[error("No backend selected")]
     #[diagnostic(code(zephyr_mcumgr::cli::no_backend))]
     NoBackendSelected,
-    #[error("Setting the timeout failed")]
-    #[diagnostic(code(zephyr_mcumgr::cli::set_timeout_failed))]
-    SetTimeoutFailed(#[source] Box<dyn miette::Diagnostic + Send + Sync + 'static>),
+    // #[error("Setting the timeout failed")]
+    // #[diagnostic(code(zephyr_mcumgr::cli::set_timeout_failed))]
+    // SetTimeoutFailed(#[source] Box<dyn miette::Diagnostic + Send + Sync + 'static>),
     #[error("Command execution failed")]
     #[diagnostic(code(zephyr_mcumgr::cli::execution_failed))]
     CommandExecutionFailed(#[from] ExecuteError),
@@ -46,4 +46,7 @@ pub enum CliError {
     #[error("Failed to parse datetime string")]
     #[diagnostic(code(zephyr_mcumgr::cli::chrono_parse))]
     ChronoParseFailed(#[from] chrono::ParseError),
+    #[error("Failed to open USB serial port")]
+    #[diagnostic(code(zephyr_mcumgr::cli::usb_serial))]
+    UsbSerialOpenFailed(#[from] UsbSerialError),
 }

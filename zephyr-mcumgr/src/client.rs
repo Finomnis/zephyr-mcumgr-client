@@ -6,6 +6,7 @@ use std::{
 };
 
 use miette::Diagnostic;
+use rand::distr::SampleString;
 use thiserror::Error;
 
 use crate::{
@@ -78,6 +79,73 @@ pub enum FileUploadError {
     FrameSizeTooSmall(#[source] io::Error),
 }
 
+/// A list of available serial ports, in the form of (identifier, port_name, port_info).
+///
+/// Used for pretty error messages.
+pub struct UsbSerialPorts(pub Vec<(String, String, serialport::UsbPortInfo)>);
+impl std::fmt::Display for UsbSerialPorts {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for (identifier, port_name, port_info) in &self.0 {
+            writeln!(f)?;
+            write!(f, " - {identifier} ({port_name})")?;
+            if port_info.manufacturer.is_some() || port_info.product.is_some() {
+                write!(f, " -")?;
+                if let Some(manufacturer) = &port_info.manufacturer {
+                    write!(f, " {manufacturer}")?;
+                }
+                if let Some(product) = &port_info.product {
+                    write!(f, " {product}")?;
+                }
+            }
+        }
+        Ok(())
+    }
+}
+impl std::fmt::Debug for UsbSerialPorts {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Debug::fmt(&self.0, f)
+    }
+}
+
+/// Possible error values of [`MCUmgrClient::new_from_usb_serial`].
+#[derive(Error, Debug, Diagnostic)]
+pub enum UsbSerialError {
+    /// Serialport error
+    #[error("Serialport returned an error")]
+    #[diagnostic(code(zephyr_mcumgr::usb_serial::serialport_error))]
+    SerialPortError(#[from] serialport::Error),
+    /// No port matched the given identifier
+    #[error("No serial port matched the identifier '{identifier}'\nAvailable ports:\n{available}")]
+    #[diagnostic(code(zephyr_mcumgr::usb_serial::no_matches))]
+    NoMatchingPort {
+        /// The original identifier provided by the user
+        identifier: String,
+        /// A list of available ports
+        available: UsbSerialPorts,
+    },
+    /// More than one port matched the given identifier
+    #[error("Multiple serial ports matched the identifier '{identifier}'\n{ports}")]
+    #[diagnostic(code(zephyr_mcumgr::usb_serial::multiple_matches))]
+    MultipleMatchingPorts {
+        /// The original identifier provided by the user
+        identifier: String,
+        /// The matching ports
+        ports: UsbSerialPorts,
+    },
+    /// Returned when the identifier was empty;
+    /// can be used to query all available ports
+    #[error("An empty identifier was provided")]
+    #[diagnostic(code(zephyr_mcumgr::usb_serial::empty_identifier))]
+    IdentifierEmpty {
+        /// A list of available ports
+        ports: UsbSerialPorts,
+    },
+    /// The given identifier was not a valid RegEx
+    #[error("The given identifier was not a valid RegEx")]
+    #[diagnostic(code(zephyr_mcumgr::usb_serial::regex_error))]
+    RegexError(#[from] regex::Error),
+}
+
 impl MCUmgrClient {
     /// Creates a Zephyr MCUmgr SMP client based on a configured and opened serial port.
     ///
@@ -99,6 +167,101 @@ impl MCUmgrClient {
             connection: Connection::new(SerialTransport::new(serial)),
             smp_frame_size: ZEPHYR_DEFAULT_SMP_FRAME_SIZE.into(),
         }
+    }
+
+    /// Creates a Zephyr MCUmgr SMP client based on a USB serial port identified by VID:PID.
+    ///
+    /// Useful for programming many devices in rapid succession, as Windows usually
+    /// gives each one a different COMxx identifier.
+    ///
+    /// # Arguments
+    ///
+    /// * `identifier` - A regex that identifies the device.
+    /// * `baud_rate` - The baud rate the port should operate at.
+    /// * `timeout` - The communication timeout.
+    ///
+    /// # Identifier examples
+    ///
+    /// - `1234:89AB` - Vendor ID 1234, Product ID 89AB. Will fail if product has multiple serial ports.
+    /// - `1234:89AB:12` - Vendor ID 1234, Product ID 89AB, Interface 12.
+    /// - `1234:.*:[2-3]` - Vendor ID 1234, any Product Id, Interface 2 or 3.
+    ///
+    pub fn new_from_usb_serial(
+        identifier: impl AsRef<str>,
+        baud_rate: u32,
+        timeout: Duration,
+    ) -> Result<Self, UsbSerialError> {
+        let identifier = identifier.as_ref();
+
+        let ports = serialport::available_ports()?
+            .into_iter()
+            .filter_map(|port| {
+                if let serialport::SerialPortType::UsbPort(port_info) = port.port_type {
+                    if let Some(interface) = port_info.interface {
+                        Some((
+                            format!("{:04x}:{:04x}:{}", port_info.vid, port_info.pid, interface),
+                            port.port_name,
+                            port_info,
+                        ))
+                    } else {
+                        Some((
+                            format!("{:04x}:{:04x}", port_info.vid, port_info.pid),
+                            port.port_name,
+                            port_info,
+                        ))
+                    }
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>();
+
+        if identifier.is_empty() {
+            return Err(UsbSerialError::IdentifierEmpty {
+                ports: UsbSerialPorts(ports),
+            });
+        }
+
+        let port_regex = regex::RegexBuilder::new(identifier)
+            .case_insensitive(true)
+            .unicode(true)
+            .build()?;
+
+        let matches = ports
+            .iter()
+            .filter(|(ident, _, _)| {
+                if let Some(m) = port_regex.find(ident) {
+                    // Only accept if the regex matches at the beginning of the string
+                    m.start() == 0
+                } else {
+                    false
+                }
+            })
+            .cloned()
+            .collect::<Vec<_>>();
+
+        if matches.len() > 1 {
+            return Err(UsbSerialError::MultipleMatchingPorts {
+                identifier: identifier.to_string(),
+                ports: UsbSerialPorts(matches),
+            });
+        }
+
+        let port_name = match matches.into_iter().next() {
+            Some((_, port_name, _)) => port_name,
+            None => {
+                return Err(UsbSerialError::NoMatchingPort {
+                    identifier: identifier.to_string(),
+                    available: UsbSerialPorts(ports),
+                });
+            }
+        };
+
+        let serial = serialport::new(port_name, baud_rate)
+            .timeout(timeout)
+            .open()?;
+
+        Ok(Self::new_from_serial(serial))
     }
 
     /// Configures the maximum SMP frame size that we can send to the device.
@@ -134,6 +297,25 @@ impl MCUmgrClient {
     /// duration, an error will be raised.
     pub fn set_timeout(&self, timeout: Duration) -> Result<(), miette::Report> {
         self.connection.set_timeout(timeout)
+    }
+
+    /// Checks if the device is alive and responding.
+    ///
+    /// Runs a simple echo with random data and checks if the response matches.
+    ///
+    /// # Return
+    ///
+    /// An error if the device is not alive and responding.
+    pub fn check_connection(&self) -> Result<(), ExecuteError> {
+        let random_message = rand::distr::Alphanumeric.sample_string(&mut rand::rng(), 16);
+        let response = self.os_echo(&random_message)?;
+        if random_message == response {
+            Ok(())
+        } else {
+            Err(ExecuteError::ReceiveFailed(
+                crate::transport::ReceiveError::UnexpectedResponse,
+            ))
+        }
     }
 
     /// Sends a message to the device and expects the same message back as response.

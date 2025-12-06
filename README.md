@@ -64,21 +64,48 @@ cargo add zephyr-mcumgr
 cargo install zephyr-mcumgr-cli
 ```
 
-### Usage example
+### Usage examples
+
+Send an echo over a serial connection:
 
 ```none
 $ zephyr-mcumgr --serial COM42 os echo "Hello world!"
 Hello world!
 ```
 
-Or as a [raw command](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_groups/smp_group_0.html#echo-command):
+Omit the command to run a simple connection test:
 
 ```none
-$ zephyr-mcumgr --serial COM42 raw read 0 0 '{"d":"Hello World!"}'
-{
-  "r": "Hello World!"
-}
+$ zephyr-mcumgr --serial COM42
+Device alive and responsive.
 ```
+
+Connect to a USB serial port using USB VID/PID:
+
+```none
+$ zephyr-mcumgr --usb-serial 2fe3:0004
+Device alive and responsive.
+```
+
+Or without an identifier to list all available ports:
+
+```none
+$ zephyr-mcumgr --usb-serial
+
+Available USB serial ports:
+
+ - 2fe3:0004:0 (/dev/ttyACM0) - Zephyr Project CDC ACM serial backend
+```
+
+You can even use a Regex if you want:
+
+```none
+$ zephyr-mcumgr --usb-serial "2fe3:.*"
+Device alive and responsive.
+```
+
+> [!TIP]
+> `2fe3:0004` is the default VID/PID of Zephyr samples.
 
 ## Performance
 
