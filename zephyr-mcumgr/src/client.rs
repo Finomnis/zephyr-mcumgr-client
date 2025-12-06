@@ -79,15 +79,15 @@ pub enum FileUploadError {
     FrameSizeTooSmall(#[source] io::Error),
 }
 
-/// A list of available serial ports, in the form of (identifier, port).
+/// A list of available serial ports, in the form of (identifier, port_name, port_info).
 ///
 /// Used for pretty error messages.
 pub struct UsbSerialPorts(pub Vec<(String, String, serialport::UsbPortInfo)>);
 impl std::fmt::Display for UsbSerialPorts {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for (identifier, port, port_info) in &self.0 {
+        for (identifier, port_name, port_info) in &self.0 {
             writeln!(f)?;
-            write!(f, " - {identifier} ({port})")?;
+            write!(f, " - {identifier} ({port_name})")?;
             if port_info.manufacturer.is_some() || port_info.product.is_some() {
                 write!(f, " -")?;
                 if let Some(manufacturer) = &port_info.manufacturer {
