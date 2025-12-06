@@ -39,7 +39,7 @@ with MCUmgrClient.serial("/dev/ttyACM0") as client:
 Hello world!
 ```
 
-Or a USB based serial port:
+Or a USB-based serial port:
 
 ```python no_run
 from zephyr_mcumgr import MCUmgrClient
