@@ -132,9 +132,7 @@ impl MCUmgrClient {
     ///
     /// Runs a simple echo with random data and checks if the response matches.
     ///
-    /// ### Return
-    ///
-    /// An error if the device is not alive and responding.
+    /// Raises an error if the device is not alive and responding.
     pub fn check_connection(&self) -> PyResult<()> {
         self.get_client()?.check_connection().map_err(err_to_pyerr)
     }

@@ -177,9 +177,7 @@ class MCUmgrClient:
         
         Runs a simple echo with random data and checks if the response matches.
         
-        ### Return
-        
-        An error if the device is not alive and responding.
+        Raises an error if the device is not alive and responding.
         """
     def os_echo(self, msg: builtins.str) -> builtins.str:
         r"""
