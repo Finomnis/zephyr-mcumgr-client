@@ -27,7 +27,7 @@ fn cli_main() -> Result<(), CliError> {
             .map_err(CliError::OpenSerialFailed)?;
         MCUmgrClient::new_from_serial(serial)
     } else if let Some(identifier) = args.usb_serial {
-        let result = MCUmgrClient::new_from_usb_serial(identifier);
+        let result = MCUmgrClient::new_from_usb_serial(identifier, args.baud);
 
         if let Err(UsbSerialError::IdentifierEmpty { ports }) = &result {
             println!();

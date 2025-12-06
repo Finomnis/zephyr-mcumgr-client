@@ -82,7 +82,7 @@ Device alive and responsive.
 
 Connect to a USB serial port using USB VID/PID:
 ```none
-$ zephyr-mcumgr --usb-serial 2FE3:0004
+$ zephyr-mcumgr --usb-serial 2fe3:0004
 Device alive and responsive.
 ```
 
@@ -92,7 +92,7 @@ $ zephyr-mcumgr --usb-serial
 
 Available USB serial ports:
 
- - 2FE3:0004:0 (/dev/ttyACM0) - Zephyr Project CDC ACM serial backend
+ - 2fe3:0004:0 (/dev/ttyACM0) - Zephyr Project CDC ACM serial backend
 ```
 
 > [!TIP]

@@ -139,6 +139,11 @@ pub enum UsbSerialError {
         /// A list of available ports
         ports: UsbSerialPorts,
     },
+
+    /// The given identifier was not a valid RegEx
+    #[error("The given identifier was not a valid RegEx")]
+    #[diagnostic(code(zephyr_mcumgr::usb_serial::regex_error))]
+    RegexError(#[from] regex::Error),
 }
 
 impl MCUmgrClient {
@@ -172,6 +177,7 @@ impl MCUmgrClient {
     /// # Arguments
     ///
     /// * `identifier` - A regex that identifies the device.
+    /// * `baud_rate` - The baud rate the port should operate at.
     ///
     /// # Identifier examples
     ///
@@ -179,7 +185,10 @@ impl MCUmgrClient {
     /// - `1234:89AB:12` - Vendor ID 1234, Product ID 89AB, Interface 12.
     /// - `1234:.*:[2-3]` - Vendor ID 1234, any Product Id, Interface 2 or 3.
     ///
-    pub fn new_from_usb_serial(identifier: impl AsRef<str>) -> Result<Self, UsbSerialError> {
+    pub fn new_from_usb_serial(
+        identifier: impl AsRef<str>,
+        baud_rate: u32,
+    ) -> Result<Self, UsbSerialError> {
         let identifier = identifier.as_ref();
 
         let ports = serialport::available_ports()?
@@ -188,13 +197,13 @@ impl MCUmgrClient {
                 if let serialport::SerialPortType::UsbPort(port_info) = port.port_type {
                     if let Some(interface) = port_info.interface {
                         Some((
-                            format!("{:04X}:{:04X}:{}", port_info.vid, port_info.pid, interface),
+                            format!("{:04x}:{:04x}:{}", port_info.vid, port_info.pid, interface),
                             port.port_name,
                             port_info,
                         ))
                     } else {
                         Some((
-                            format!("{:04X}:{:04X}", port_info.vid, port_info.pid),
+                            format!("{:04x}:{:04x}", port_info.vid, port_info.pid),
                             port.port_name,
                             port_info,
                         ))
@@ -211,10 +220,44 @@ impl MCUmgrClient {
             });
         }
 
-        Err(UsbSerialError::NoMatchingPort {
-            identifier: identifier.to_string(),
-            available: UsbSerialPorts(ports),
-        })
+        let port_regex = regex::RegexBuilder::new(identifier)
+            .case_insensitive(true)
+            .unicode(true)
+            .build()?;
+
+        let matches = ports
+            .iter()
+            .filter(|(ident, _, _)| {
+                if let Some(m) = port_regex.find(ident) {
+                    // Only accept if the regex matches at the beginning of the string
+                    m.start() == 0
+                } else {
+                    false
+                }
+            })
+            .cloned()
+            .collect::<Vec<_>>();
+
+        if matches.len() > 1 {
+            return Err(UsbSerialError::MultipleMatchingPorts {
+                identifier: identifier.to_string(),
+                ports: UsbSerialPorts(matches),
+            });
+        }
+
+        let port_name = match matches.into_iter().next() {
+            Some((_, port_name, _)) => port_name,
+            None => {
+                return Err(UsbSerialError::NoMatchingPort {
+                    identifier: identifier.to_string(),
+                    available: UsbSerialPorts(ports),
+                });
+            }
+        };
+
+        let serial = serialport::new(port_name, baud_rate).open()?;
+
+        Ok(Self::new_from_serial(serial))
     }
 
     /// Configures the maximum SMP frame size that we can send to the device.
