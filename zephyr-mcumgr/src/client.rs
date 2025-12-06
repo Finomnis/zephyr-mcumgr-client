@@ -78,6 +78,69 @@ pub enum FileUploadError {
     FrameSizeTooSmall(#[source] io::Error),
 }
 
+/// A list of available serial ports, in the form of (identifier, port).
+///
+/// Used for pretty error messages.
+pub struct UsbSerialPorts(pub Vec<(String, String, serialport::UsbPortInfo)>);
+impl std::fmt::Display for UsbSerialPorts {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for (identifier, port, port_info) in &self.0 {
+            writeln!(f)?;
+            write!(f, " - {identifier} ({port})")?;
+            if port_info.manufacturer.is_some() || port_info.product.is_some() {
+                write!(f, " -")?;
+                if let Some(manufacturer) = &port_info.manufacturer {
+                    write!(f, " {manufacturer}")?;
+                }
+                if let Some(product) = &port_info.product {
+                    write!(f, " {product}")?;
+                }
+            }
+        }
+        Ok(())
+    }
+}
+impl std::fmt::Debug for UsbSerialPorts {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Debug::fmt(&self.0, f)
+    }
+}
+
+/// Possible error values of [`MCUmgrClient::new_from_usb_serial`].
+#[derive(Error, Debug, Diagnostic)]
+pub enum UsbSerialError {
+    /// Serialport error
+    #[error("Serialport returned an error")]
+    #[diagnostic(code(zephyr_mcumgr::usb_serial::serialport_error))]
+    SerialPortError(#[from] serialport::Error),
+    /// No port matched the given identifier
+    #[error("No serial port matched the identifier '{identifier}'\nAvailable ports:\n{available}")]
+    #[diagnostic(code(zephyr_mcumgr::usb_serial::no_matches))]
+    NoMatchingPort {
+        /// The original identifier provided by the user
+        identifier: String,
+        /// A list of available ports
+        available: UsbSerialPorts,
+    },
+    /// More than one port matched the given identifier
+    #[error("Multiple serial ports matched the identifier '{identifier}'\n{ports}")]
+    #[diagnostic(code(zephyr_mcumgr::usb_serial::no_matches))]
+    MultipleMatchingPorts {
+        /// The original identifier provided by the user
+        identifier: String,
+        /// The matching ports
+        ports: UsbSerialPorts,
+    },
+    /// Returned when the identifier was empty;
+    /// can be used to query all available ports
+    #[error("An empty identifier was provided")]
+    #[diagnostic(code(zephyr_mcumgr::usb_serial::empty_identifier))]
+    IdentifierEmpty {
+        /// A list of available ports
+        ports: UsbSerialPorts,
+    },
+}
+
 impl MCUmgrClient {
     /// Creates a Zephyr MCUmgr SMP client based on a configured and opened serial port.
     ///
@@ -99,6 +162,59 @@ impl MCUmgrClient {
             connection: Connection::new(SerialTransport::new(serial)),
             smp_frame_size: ZEPHYR_DEFAULT_SMP_FRAME_SIZE.into(),
         }
+    }
+
+    /// Creates a Zephyr MCUmgr SMP client based on a USB serial port identified by VID:PID.
+    ///
+    /// Useful for programming many devices in rapid succession, as Windows usually
+    /// gives each one a different COMxx identifier.
+    ///
+    /// # Arguments
+    ///
+    /// * `identifier` - A regex that identifies the device.
+    ///
+    /// # Identifier examples
+    ///
+    /// - `1234:89AB` - Vendor ID 1234, Product ID 89AB. Will fail if product has multiple serial ports.
+    /// - `1234:89AB:12` - Vendor ID 1234, Product ID 89AB, Interface 12.
+    /// - `1234:.*:[2-3]` - Vendor ID 1234, any Product Id, Interface 2 or 3.
+    ///
+    pub fn new_from_usb_serial(identifier: impl AsRef<str>) -> Result<Self, UsbSerialError> {
+        let identifier = identifier.as_ref();
+
+        let ports = serialport::available_ports()?
+            .into_iter()
+            .filter_map(|port| {
+                if let serialport::SerialPortType::UsbPort(port_info) = port.port_type {
+                    if let Some(interface) = port_info.interface {
+                        Some((
+                            format!("{:04X}:{:04X}:{}", port_info.vid, port_info.pid, interface),
+                            port.port_name,
+                            port_info,
+                        ))
+                    } else {
+                        Some((
+                            format!("{:04X}:{:04X}", port_info.vid, port_info.pid),
+                            port.port_name,
+                            port_info,
+                        ))
+                    }
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>();
+
+        if identifier.is_empty() {
+            return Err(UsbSerialError::IdentifierEmpty {
+                ports: UsbSerialPorts(ports),
+            });
+        }
+
+        Err(UsbSerialError::NoMatchingPort {
+            identifier: identifier.to_string(),
+            available: UsbSerialPorts(ports),
+        })
     }
 
     /// Configures the maximum SMP frame size that we can send to the device.

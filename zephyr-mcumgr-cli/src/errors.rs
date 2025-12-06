@@ -3,7 +3,7 @@ use thiserror::Error;
 
 use zephyr_mcumgr::{
     Errno,
-    client::{FileDownloadError, FileUploadError},
+    client::{FileDownloadError, FileUploadError, UsbSerialError},
     connection::ExecuteError,
 };
 
@@ -46,4 +46,10 @@ pub enum CliError {
     #[error("Failed to parse datetime string")]
     #[diagnostic(code(zephyr_mcumgr::cli::chrono_parse))]
     ChronoParseFailed(#[from] chrono::ParseError),
+    #[error("Failed to open USB serial port")]
+    #[diagnostic(code(zephyr_mcumgr::cli::usb_serial))]
+    UsbSerialOpenFailed(#[from] UsbSerialError),
+    #[error("Echo returned unexpected response")]
+    #[diagnostic(code(zephyr_mcumgr::cli::echo))]
+    EchoFailed,
 }
