@@ -11,6 +11,7 @@ mod formatting;
 use std::time::Duration;
 
 use clap::Parser;
+use rand::distr::SampleString;
 use zephyr_mcumgr::{MCUmgrClient, client::UsbSerialError};
 
 use crate::errors::CliError;
@@ -55,7 +56,19 @@ fn cli_main() -> Result<(), CliError> {
         log::warn!("Hint: Make sure that `CONFIG_MCUMGR_GRP_OS_MCUMGR_PARAMS` is enabled.");
     }
 
-    groups::run(&client, args.common, args.group)
+    if let Some(group) = args.group {
+        groups::run(&client, args.common, group)?;
+    } else {
+        let random_message = rand::distr::Alphanumeric.sample_string(&mut rand::rng(), 16);
+        let response = client.os_echo(&random_message)?;
+        if random_message == response {
+            println!("Device alive and responsive.");
+        } else {
+            return Err(CliError::EchoFailed);
+        }
+    }
+
+    Ok(())
 }
 
 fn main() -> miette::Result<()> {

@@ -46,5 +46,5 @@ pub struct App {
 
     /// Command group
     #[command(subcommand)]
-    pub group: Group,
+    pub group: Option<Group>,
 }

@@ -49,4 +49,7 @@ pub enum CliError {
     #[error("Failed to open USB serial port")]
     #[diagnostic(code(zephyr_mcumgr::cli::usb_serial))]
     UsbSerialOpenFailed(#[from] UsbSerialError),
+    #[error("Echo returned unexpected response")]
+    #[diagnostic(code(zephyr_mcumgr::cli::echo))]
+    EchoFailed,
 }
