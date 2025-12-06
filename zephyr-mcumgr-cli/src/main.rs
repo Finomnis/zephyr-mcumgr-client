@@ -22,11 +22,16 @@ fn cli_main() -> Result<(), CliError> {
 
     let client = if let Some(serial_name) = args.serial {
         let serial = serialport::new(serial_name, args.baud)
+            .timeout(Duration::from_millis(args.timeout))
             .open()
             .map_err(CliError::OpenSerialFailed)?;
         MCUmgrClient::new_from_serial(serial)
     } else if let Some(identifier) = args.usb_serial {
-        let result = MCUmgrClient::new_from_usb_serial(identifier, args.baud);
+        let result = MCUmgrClient::new_from_usb_serial(
+            identifier,
+            args.baud,
+            Duration::from_millis(args.timeout),
+        );
 
         if let Err(UsbSerialError::IdentifierEmpty { ports }) = &result {
             println!();
@@ -44,10 +49,6 @@ fn cli_main() -> Result<(), CliError> {
     } else {
         return Err(CliError::NoBackendSelected);
     };
-
-    client
-        .set_timeout(Duration::from_millis(args.timeout))
-        .map_err(|e| CliError::SetTimeoutFailed(e.into()))?;
 
     if let Err(e) = client.use_auto_frame_size() {
         log::warn!("Failed to read SMP frame size from device, using slow default");

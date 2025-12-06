@@ -179,6 +179,7 @@ impl MCUmgrClient {
     ///
     /// * `identifier` - A regex that identifies the device.
     /// * `baud_rate` - The baud rate the port should operate at.
+    /// * `timeout` - The communication timeout.
     ///
     /// # Identifier examples
     ///
@@ -189,6 +190,7 @@ impl MCUmgrClient {
     pub fn new_from_usb_serial(
         identifier: impl AsRef<str>,
         baud_rate: u32,
+        timeout: Duration,
     ) -> Result<Self, UsbSerialError> {
         let identifier = identifier.as_ref();
 
@@ -256,7 +258,9 @@ impl MCUmgrClient {
             }
         };
 
-        let serial = serialport::new(port_name, baud_rate).open()?;
+        let serial = serialport::new(port_name, baud_rate)
+            .timeout(timeout)
+            .open()?;
 
         Ok(Self::new_from_serial(serial))
     }
