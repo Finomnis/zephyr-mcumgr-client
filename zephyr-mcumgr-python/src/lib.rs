@@ -89,11 +89,12 @@ impl MCUmgrClient {
     #[staticmethod]
     #[pyo3(signature = (identifier, baud_rate=115200, timeout_ms=500))]
     fn usb_serial(identifier: &str, baud_rate: u32, timeout_ms: u64) -> PyResult<Self> {
-        let client = ::zephyr_mcumgr::MCUmgrClient::new_from_usb_serial(identifier, baud_rate)
-            .map_err(err_to_pyerr)?;
-        client
-            .set_timeout(Duration::from_millis(timeout_ms))
-            .map_err(err_to_pyerr)?;
+        let client = ::zephyr_mcumgr::MCUmgrClient::new_from_usb_serial(
+            identifier,
+            baud_rate,
+            Duration::from_millis(timeout_ms),
+        )
+        .map_err(err_to_pyerr)?;
         Ok(MCUmgrClient {
             client: Mutex::new(Some(Arc::new(client))),
         })
