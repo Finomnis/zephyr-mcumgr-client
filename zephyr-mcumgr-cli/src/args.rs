@@ -45,6 +45,8 @@ pub struct App {
     pub common: CommonArgs,
 
     /// Command group
+    ///
+    /// If missing, run a connection test
     #[command(subcommand)]
     pub group: Option<Group>,
 }
