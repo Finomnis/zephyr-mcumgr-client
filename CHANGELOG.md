@@ -10,11 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changes
 
 - Add `MCUmgrClient::new_from_usb_serial` that connects to a USB VID:PID serial port
-    - Python: `MCUmgrClient::usb_serial`
-    - CLI: add `-u`/`--usb-serial` flag
-        - When no argument specified, list all available ports
+  - Python: `MCUmgrClient::usb_serial`
+  - CLI: add `-u`/`--usb-serial` flag
+    - When no argument specified, list all available ports
 - Add `MCUmgrClient::check_connection` that checks if the device is connected and responding
-    - CLI: run connection test if no group specified
+  - CLI: run connection test if no group specified
 
 ## [0.5.0] - 2025-12-06
 
