@@ -140,7 +140,6 @@ pub enum UsbSerialError {
         /// A list of available ports
         ports: UsbSerialPorts,
     },
-
     /// The given identifier was not a valid RegEx
     #[error("The given identifier was not a valid RegEx")]
     #[diagnostic(code(zephyr_mcumgr::usb_serial::regex_error))]
