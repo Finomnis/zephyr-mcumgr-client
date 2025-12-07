@@ -12,9 +12,9 @@ pub enum MCUbootCommand {
 pub fn run(_client: &Client, _args: CommonArgs, command: MCUbootCommand) -> Result<(), CliError> {
     match command {
         MCUbootCommand::GetImageInfo { file } => {
-            let (data, _source_filename) = read_input_file(&file)?;
-
-            println!("Image size: {}", data.len());
+            let (image_data, _source_filename) = read_input_file(&file)?;
+            let image_info = zephyr_mcumgr::mcuboot::image::parse(image_data.as_ref())?;
+            println!("{:?}", image_info);
         }
     }
 
