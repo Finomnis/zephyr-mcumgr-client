@@ -5,6 +5,7 @@ use zephyr_mcumgr::{
     Errno,
     client::{FileDownloadError, FileUploadError, UsbSerialError},
     connection::ExecuteError,
+    mcuboot::ImageParseError,
 };
 
 /// Possible CLI errors.
@@ -49,4 +50,7 @@ pub enum CliError {
     #[error("Failed to open USB serial port")]
     #[diagnostic(code(zephyr_mcumgr::cli::usb_serial))]
     UsbSerialOpenFailed(#[from] UsbSerialError),
+    #[error("Failed to parse MCUboot image")]
+    #[diagnostic(code(zephyr_mcumgr::cli::image_parse))]
+    ImageParseFailed(#[from] ImageParseError),
 }

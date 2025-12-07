@@ -26,6 +26,9 @@ pub mod smp_errors;
 /// Bootloader related definitions
 pub mod bootloader;
 
+/// MCUboot specific algorithms
+pub mod mcuboot;
+
 /// See [`enum mcumgr_group_t`](https://docs.zephyrproject.org/latest/doxygen/html/mgmt__defines_8h.html).
 #[derive(strum::FromRepr, strum::Display, Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(u16)]
