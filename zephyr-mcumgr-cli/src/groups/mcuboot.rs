@@ -13,7 +13,8 @@ pub fn run(_client: &Client, _args: CommonArgs, command: MCUbootCommand) -> Resu
     match command {
         MCUbootCommand::GetImageInfo { file } => {
             let (image_data, _source_filename) = read_input_file(&file)?;
-            let image_info = zephyr_mcumgr::mcuboot::image::parse(image_data.as_ref())?;
+            let image_info =
+                zephyr_mcumgr::mcuboot::image::parse(std::io::Cursor::new(image_data.as_ref()))?;
             println!("{:?}", image_info);
         }
     }
