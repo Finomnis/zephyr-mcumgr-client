@@ -14,9 +14,7 @@ pub fn run(_client: &Client, _args: CommonArgs, command: MCUbootCommand) -> Resu
         MCUbootCommand::GetImageInfo { file } => {
             let (data, _source_filename) = read_input_file(&file)?;
 
-            println!("{}", data.len());
-
-            todo!()
+            println!("Image size: {}", data.len());
         }
     }
 
