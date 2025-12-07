@@ -13,6 +13,10 @@ pub struct McubootImageInfo {
     #[pyo3(get)]
     pub version: String,
     /// The identifying hash for the firmware
+    ///
+    /// Note that this will not be the same as the SHA256 of the whole file, it is the field in the
+    /// MCUboot TLV section that contains a hash of the data which is used for signature
+    /// verification purposes.
     #[serde(serialize_with = "crate::repr_macro::serialize_pybytes_as_hex")]
     #[pyo3(get)]
     pub hash: Py<PyBytes>,

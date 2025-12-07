@@ -28,6 +28,10 @@ pub struct ImageInfo {
     /// Firmware version
     pub version: ImageVersion,
     /// The identifying hash for the firmware
+    ///
+    /// Note that this will not be the same as the SHA256 of the whole file, it is the field in the
+    /// MCUboot TLV section that contains a hash of the data which is used for signature
+    /// verification purposes.
     pub hash: [u8; SHA256_LEN],
 }
 
@@ -127,7 +131,7 @@ pub fn get_image_info(
     let mut id_hash = None;
     {
         let mut tlv_read: u32 = 0;
-        while tlv_read + 4 < u32::from(it_tlv_tot) {
+        while tlv_read + 4 <= u32::from(it_tlv_tot) {
             let it_type = read_u8(image_data)?;
             read_u8(image_data)?;
             let it_len = read_u16(image_data)?;
