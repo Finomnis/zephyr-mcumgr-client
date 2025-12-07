@@ -23,7 +23,7 @@ impl std::fmt::Display for ImageVersion {
 }
 
 /// Information about an MCUboot firmware image
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub struct ImageInfo {
     /// Firmware version
     pub version: ImageVersion,
@@ -79,6 +79,8 @@ const IMAGE_MAGIC: u32 = 0x96f3b83d;
 const IMAGE_TLV_INFO_MAGIC: u16 = 0x6907;
 const IMAGE_TLV_SHA256: u8 = 0x10;
 const SHA256_LEN: usize = 32;
+const TLV_INFO_HEADER_SIZE: u32 = 4;
+const TLV_ELEMENT_HEADER_SIZE: u32 = 4;
 
 /// Extract information from an MCUboot image file
 pub fn get_image_info(
@@ -131,7 +133,8 @@ pub fn get_image_info(
     let mut id_hash = None;
     {
         let mut tlv_read: u32 = 0;
-        while tlv_read + 4 <= u32::from(it_tlv_tot) {
+        // Loop while at least one tlv header can still be read
+        while tlv_read + TLV_INFO_HEADER_SIZE + TLV_ELEMENT_HEADER_SIZE <= u32::from(it_tlv_tot) {
             let it_type = read_u8(image_data)?;
             read_u8(image_data)?;
             let it_len = read_u16(image_data)?;
