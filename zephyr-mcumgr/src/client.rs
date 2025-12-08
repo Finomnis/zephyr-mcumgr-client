@@ -83,12 +83,15 @@ pub enum FileUploadError {
 /// Information about a serial port
 #[derive(Debug, Serialize, Clone, Eq, PartialEq)]
 pub struct UsbSerialPortInfo {
-    identifier: String,
-    port_name: String,
-    port_info: serialport::UsbPortInfo,
+    /// The identifier that the regex will match against
+    pub identifier: String,
+    /// The name of the port
+    pub port_name: String,
+    /// Information about the port
+    pub port_info: serialport::UsbPortInfo,
 }
 
-/// A list of available serial ports, in the form of (identifier, port_name, port_info).
+/// A list of available serial ports
 ///
 /// Used for pretty error messages.
 #[derive(Serialize, Clone, Eq, PartialEq)]
