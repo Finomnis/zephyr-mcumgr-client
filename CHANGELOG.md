@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.6.0] - xxxx-xx-xx
 
 ### Breaking Changes
+
 - Refactor `client::UsbSerialPorts` to be less hacky
 
 ### Changes
