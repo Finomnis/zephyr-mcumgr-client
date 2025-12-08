@@ -28,8 +28,9 @@ pub struct App {
 
     /// Use the given usb serial port as backend
     ///
-    /// Must contain a regex that matches `vid:pid` or `vid:pid:iface`
-    #[arg(short, long, num_args = 0..=1, default_missing_value = "")]
+    /// Must contain a regex that matches `vid:pid` or `vid:pid:iface`.
+    /// If no argument provided, list all available ports and exit.
+    #[arg(short, long, verbatim_doc_comment, num_args = 0..=1, default_missing_value = "")]
     pub usb_serial: Option<String>,
 
     /// Serial port baud rate

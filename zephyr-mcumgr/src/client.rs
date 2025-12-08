@@ -7,6 +7,7 @@ use std::{
 
 use miette::Diagnostic;
 use rand::distr::SampleString;
+use serde::Serialize;
 use thiserror::Error;
 
 use crate::{
@@ -79,23 +80,63 @@ pub enum FileUploadError {
     FrameSizeTooSmall(#[source] io::Error),
 }
 
-/// A list of available serial ports, in the form of (identifier, port_name, port_info).
+/// Information about a serial port
+#[derive(Debug, Serialize, Clone, Eq, PartialEq)]
+pub struct UsbSerialPortInfo {
+    /// The identifier that the regex will match against
+    pub identifier: String,
+    /// The name of the port
+    pub port_name: String,
+    /// Information about the port
+    pub port_info: serialport::UsbPortInfo,
+}
+
+/// A list of available serial ports
 ///
 /// Used for pretty error messages.
-pub struct UsbSerialPorts(pub Vec<(String, String, serialport::UsbPortInfo)>);
+#[derive(Serialize, Clone, Eq, PartialEq)]
+#[serde(transparent)]
+pub struct UsbSerialPorts(pub Vec<UsbSerialPortInfo>);
 impl std::fmt::Display for UsbSerialPorts {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for (identifier, port_name, port_info) in &self.0 {
+        for UsbSerialPortInfo {
+            identifier,
+            port_name,
+            port_info,
+        } in &self.0
+        {
             writeln!(f)?;
-            write!(f, " - {identifier} ({port_name})")?;
+            write!(f, " - {identifier}")?;
+
+            let mut print_port_string = true;
+            let port_string = format!("({port_name})");
+
             if port_info.manufacturer.is_some() || port_info.product.is_some() {
                 write!(f, " -")?;
                 if let Some(manufacturer) = &port_info.manufacturer {
-                    write!(f, " {manufacturer}")?;
+                    let mut print_manufacturer = true;
+
+                    if let Some(product) = &port_info.product {
+                        if product.starts_with(manufacturer) {
+                            print_manufacturer = false;
+                        }
+                    }
+
+                    if print_manufacturer {
+                        write!(f, " {manufacturer}")?;
+                    }
                 }
                 if let Some(product) = &port_info.product {
                     write!(f, " {product}")?;
+
+                    if product.ends_with(&port_string) {
+                        print_port_string = false;
+                    }
                 }
+            }
+
+            if print_port_string {
+                write!(f, " {port_string}")?;
             }
         }
         Ok(())
@@ -198,17 +239,20 @@ impl MCUmgrClient {
             .filter_map(|port| {
                 if let serialport::SerialPortType::UsbPort(port_info) = port.port_type {
                     if let Some(interface) = port_info.interface {
-                        Some((
-                            format!("{:04x}:{:04x}:{}", port_info.vid, port_info.pid, interface),
-                            port.port_name,
+                        Some(UsbSerialPortInfo {
+                            identifier: format!(
+                                "{:04x}:{:04x}:{}",
+                                port_info.vid, port_info.pid, interface
+                            ),
+                            port_name: port.port_name,
                             port_info,
-                        ))
+                        })
                     } else {
-                        Some((
-                            format!("{:04x}:{:04x}", port_info.vid, port_info.pid),
-                            port.port_name,
+                        Some(UsbSerialPortInfo {
+                            identifier: format!("{:04x}:{:04x}", port_info.vid, port_info.pid),
+                            port_name: port.port_name,
                             port_info,
-                        ))
+                        })
                     }
                 } else {
                     None
@@ -229,8 +273,8 @@ impl MCUmgrClient {
 
         let matches = ports
             .iter()
-            .filter(|(ident, _, _)| {
-                if let Some(m) = port_regex.find(ident) {
+            .filter(|port| {
+                if let Some(m) = port_regex.find(&port.identifier) {
                     // Only accept if the regex matches at the beginning of the string
                     m.start() == 0
                 } else {
@@ -248,7 +292,7 @@ impl MCUmgrClient {
         }
 
         let port_name = match matches.into_iter().next() {
-            Some((_, port_name, _)) => port_name,
+            Some(port) => port.port_name,
             None => {
                 return Err(UsbSerialError::NoMatchingPort {
                     identifier: identifier.to_string(),

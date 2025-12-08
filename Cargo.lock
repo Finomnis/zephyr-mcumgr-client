@@ -1490,6 +1490,7 @@ dependencies = [
  "mach2",
  "nix",
  "scopeguard",
+ "serde",
  "unescaper",
  "winapi",
 ]
@@ -2078,7 +2079,7 @@ checksum = "f17a85883d4e6d00e8a97c586de764dabcc06133f7f1d55dce5cdc070ad7fe59"
 
 [[package]]
 name = "zephyr-mcumgr"
-version = "0.5.2"
+version = "0.6.0"
 dependencies = [
  "base64",
  "chrono",
@@ -2101,7 +2102,7 @@ dependencies = [
 
 [[package]]
 name = "zephyr-mcumgr-cli"
-version = "0.5.2"
+version = "0.6.0"
 dependencies = [
  "chrono",
  "ciborium",
@@ -2119,7 +2120,7 @@ dependencies = [
 
 [[package]]
 name = "zephyr-mcumgr-python"
-version = "0.5.2"
+version = "0.6.0"
 dependencies = [
  "ciborium",
  "hex",
