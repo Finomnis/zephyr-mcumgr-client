@@ -36,15 +36,22 @@ fn cli_main() -> Result<(), CliError> {
         );
 
         if let Err(UsbSerialError::IdentifierEmpty { ports }) = &result {
-            println!();
-            if ports.0.is_empty() {
-                println!("No USB serial ports available.");
+            if args.common.json {
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(ports).map_err(CliError::JsonEncodeError)?
+                );
             } else {
-                println!("Available USB serial ports:");
-                println!("{}", ports);
+                println!();
+                if ports.0.is_empty() {
+                    println!("No USB serial ports available.");
+                } else {
+                    println!("Available USB serial ports:");
+                    println!("{}", ports);
+                }
+                println!();
             }
-            println!();
-            std::process::exit(1);
+            std::process::exit(0);
         }
 
         Client::new(result?)
