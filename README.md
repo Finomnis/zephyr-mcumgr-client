@@ -39,7 +39,7 @@ fn main() {
     let serial = serialport::new("COM42", 115200).open().unwrap();
 
     let mut client = MCUmgrClient::new_from_serial(serial);
-    client.set_timeout(Duration::from_millis(500));
+    client.set_timeout(Duration::from_millis(2000));
     client.use_auto_frame_size().unwrap();
 
     println!("{:?}", client.os_echo("Hello world!").unwrap());

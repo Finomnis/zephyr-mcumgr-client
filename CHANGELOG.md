@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add CLI commands:
   - `image`
     - `erase`
+- Increase default timeout to `2000 ms`.
 
 ## [0.6.1] - 2026-01-13
 

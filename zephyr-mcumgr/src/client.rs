@@ -194,7 +194,7 @@ impl MCUmgrClient {
     /// # use zephyr_mcumgr::MCUmgrClient;
     /// # fn main() {
     /// let serial = serialport::new("COM42", 115200)
-    ///     .timeout(std::time::Duration::from_millis(500))
+    ///     .timeout(std::time::Duration::from_millis(2000))
     ///     .open()
     ///     .unwrap();
     ///
