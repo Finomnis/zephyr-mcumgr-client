@@ -253,6 +253,16 @@ impl MCUmgrClient {
             .collect())
     }
 
+    /// Erase image slot on target device.
+    ///
+    /// ### Arguments
+    ///
+    /// * `slot` - The slot ID of the image to erase. Slot `1` if omitted.
+    ///
+    pub fn image_erase(&self, slot: Option<u32>) -> PyResult<()> {
+        self.get_client()?.image_erase(slot).map_err(err_to_pyerr)
+    }
+
     /// Obtain a list of available image slots.
     pub fn image_slot_info<'py>(&self, py: Python<'py>) -> PyResult<Vec<SlotInfoImage>> {
         let images = self.get_client()?.image_slot_info().map_err(err_to_pyerr)?;

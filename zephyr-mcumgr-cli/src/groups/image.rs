@@ -4,6 +4,11 @@ use crate::{args::CommonArgs, client::Client, errors::CliError, formatting::stru
 pub enum ImageCommand {
     /// Obtain a list of images with their current state
     GetState,
+    /// Erase image slot on target device.
+    Erase {
+        /// The slot ID of the image to erase. Default: 1
+        slot: Option<u32>,
+    },
     /// Obtain a list of available image slots
     SlotInfo,
 }
@@ -34,6 +39,7 @@ pub fn run(client: &Client, args: CommonArgs, command: ImageCommand) -> Result<(
                 })?;
             }
         }
+        ImageCommand::Erase { slot } => client.image_erase(slot)?,
         ImageCommand::SlotInfo => {
             let images = client.image_slot_info()?;
 

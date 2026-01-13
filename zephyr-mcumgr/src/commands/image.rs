@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 
-use crate::commands::macros::impl_serialize_as_empty_map;
+use crate::commands::macros::{
+    impl_deserialize_from_empty_map_and_into_unit, impl_serialize_as_empty_map,
+};
 
 fn serialize_option_hex<S, T>(data: &Option<T>, serializer: S) -> Result<S::Ok, S::Error>
 where
@@ -59,6 +61,19 @@ pub struct GetImageStateResponse {
     // splitStatus field is missing
     // because it is unused by Zephyr
 }
+
+/// [Image Erase](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_groups/smp_group_1.html#image-erase) command
+#[derive(Debug, Serialize, Eq, PartialEq)]
+pub struct ImageErase {
+    /// slot number; it does not have to appear in the request at all, in which case it is assumed to be 1
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub slot: Option<u32>,
+}
+
+/// Response for [`ImageErase`] command
+#[derive(Default, Debug, Eq, PartialEq)]
+pub struct ImageEraseResponse;
+impl_deserialize_from_empty_map_and_into_unit!(ImageEraseResponse);
 
 /// [Slot Info](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_groups/smp_group_1.html#slot-info) command
 #[derive(Debug, Eq, PartialEq)]
@@ -174,6 +189,30 @@ mod tests {
                 }
             ],
         },
+    }
+
+    command_encode_decode_test! {
+        image_erase,
+        (2, 1, 5),
+        ImageErase{
+            slot: None
+        },
+        cbor!({}),
+        cbor!({}),
+        ImageEraseResponse,
+    }
+
+    command_encode_decode_test! {
+        image_erase_with_slot_number,
+        (2, 1, 5),
+        ImageErase{
+            slot: Some(42)
+        },
+        cbor!({
+            "slot" => 42,
+        }),
+        cbor!({}),
+        ImageEraseResponse,
     }
 
     command_encode_decode_test! {

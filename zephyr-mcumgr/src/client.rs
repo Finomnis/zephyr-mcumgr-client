@@ -486,6 +486,18 @@ impl MCUmgrClient {
             .map(|val| val.images)
     }
 
+    /// Erase image slot on target device.
+    ///
+    /// # Arguments
+    ///
+    /// * `slot` - The slot ID of the image to erase. Slot `1` if omitted.
+    ///
+    pub fn image_erase(&self, slot: Option<u32>) -> Result<(), ExecuteError> {
+        self.connection
+            .execute_command(&commands::image::ImageErase { slot })
+            .map(Into::into)
+    }
+
     /// Obtain a list of available image slots.
     pub fn image_slot_info(&self) -> Result<Vec<commands::image::SlotInfoImage>, ExecuteError> {
         self.connection
