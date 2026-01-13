@@ -4,7 +4,7 @@ use crate::{args::CommonArgs, client::Client, errors::CliError, formatting::stru
 pub enum ImageCommand {
     /// Obtain a list of images with their current state
     GetState,
-    /// Get information about available firmware image slots
+    /// Obtain a list of available image slots
     SlotInfo,
 }
 
