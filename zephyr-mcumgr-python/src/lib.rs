@@ -521,7 +521,6 @@ impl MCUmgrClient {
 /// from zephyr_mcumgr import MCUmgrClient
 ///
 /// with MCUmgrClient.serial("/dev/ttyACM0") as client:
-///     client.set_timeout_ms(2000)
 ///     client.use_auto_frame_size()
 ///
 ///     print(client.os_echo("Hello world!"))
