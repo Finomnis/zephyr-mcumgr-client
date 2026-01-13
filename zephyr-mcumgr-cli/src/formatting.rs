@@ -41,6 +41,8 @@ impl StructuredPrint {
             .max()
             .unwrap_or(0);
 
+        let is_terminal = std::io::stdout().is_terminal();
+
         for (key, value) in self.entries {
             if depth == 0 {
                 println!();
@@ -64,12 +66,12 @@ impl StructuredPrint {
                     let mut stdout = StandardStream::stdout(ColorChoice::Auto);
                     write!(stdout, "{}{}:{}", indent, key, padding).ok();
                     if let Some(color) = color {
-                        if std::io::stdout().is_terminal() {
+                        if is_terminal {
                             stdout.set_color(ColorSpec::new().set_fg(Some(color))).ok();
                         }
                     }
                     writeln!(stdout, "{}", value).ok();
-                    if color.is_some() && std::io::stdout().is_terminal() {
+                    if color.is_some() && is_terminal {
                         stdout.reset().ok();
                     }
                 }
