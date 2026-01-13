@@ -250,6 +250,14 @@ class MCUmgrClient:
         r"""
         Obtain a list of images with their current state.
         """
+    def image_erase(self, slot: typing.Optional[builtins.int] = None) -> None:
+        r"""
+        Erase image slot on target device.
+        
+        ### Arguments
+        
+        * `slot` - The slot ID of the image to erase. Slot `1` if omitted.
+        """
     def image_slot_info(self) -> 'builtins.list[SlotInfoImage]':
         r"""
         Obtain a list of available image slots.
