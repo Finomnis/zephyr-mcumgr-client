@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
 
-use crate::commands::macros::{
-    impl_deserialize_from_empty_map_and_into_unit, impl_serialize_as_empty_map,
+use crate::commands::{
+    CountingWriter, data_too_large_error,
+    macros::{impl_deserialize_from_empty_map_and_into_unit, impl_serialize_as_empty_map},
 };
 
 fn serialize_option_hex<S, T>(data: &Option<T>, serializer: S) -> Result<S::Ok, S::Error>
@@ -104,6 +105,62 @@ pub struct ImageUploadResponse {
     pub off: u64,
     /// indicates if the uploaded data successfully matches the provided SHA256 hash or not
     pub r#match: Option<bool>,
+}
+
+/// Computes how large [`ImageUpload::data`] is allowed to be.
+///
+/// # Arguments
+///
+/// * `smp_frame_size`  - The max allowed size of an SMP frame.
+/// * `filename`        - The filename we transfer to.
+pub fn image_upload_max_data_chunk_size(smp_frame_size: usize) -> std::io::Result<usize> {
+    const MGMT_HDR_SIZE: usize = 8; // Size of SMP header
+
+    let mut size_counter = CountingWriter::new();
+    ciborium::into_writer(
+        &ImageUpload {
+            off: u64::MAX,
+            data: &[0u8],
+            len: Some(u64::MAX),
+            image: Some(u32::MAX),
+            sha: Some(&[42; 32]),
+            upgrade: Some(true),
+        },
+        &mut size_counter,
+    )
+    .map_err(|_| data_too_large_error())?;
+
+    let size_with_one_byte = size_counter.bytes_written;
+    let size_without_data = size_with_one_byte - 1;
+
+    let estimated_data_size = smp_frame_size
+        .checked_sub(MGMT_HDR_SIZE)
+        .ok_or_else(data_too_large_error)?
+        .checked_sub(size_without_data)
+        .ok_or_else(data_too_large_error)?;
+
+    let data_length_bytes = if estimated_data_size == 0 {
+        return Err(data_too_large_error());
+    } else if estimated_data_size <= u8::MAX as usize {
+        1
+    } else if estimated_data_size < u16::MAX as usize {
+        2
+    } else if estimated_data_size < u32::MAX as usize {
+        4
+    } else {
+        8
+    };
+
+    // Remove data length entry from estimated data size
+    let actual_data_size = estimated_data_size
+        .checked_sub(data_length_bytes as usize)
+        .ok_or_else(data_too_large_error)?;
+
+    if actual_data_size == 0 {
+        return Err(data_too_large_error());
+    }
+
+    Ok(actual_data_size)
 }
 
 /// [Image Erase](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_groups/smp_group_1.html#image-erase) command
@@ -366,5 +423,43 @@ mod tests {
                 }
             ],
         },
+    }
+
+    #[test]
+    fn image_upload_max_data_chunk_size() {
+        for smp_frame_size in 101..100000 {
+            let smp_payload_size = smp_frame_size - 8 /* SMP frame header */;
+
+            let max_data_size = super::image_upload_max_data_chunk_size(smp_frame_size).unwrap();
+
+            let cmd = ImageUpload {
+                off: u64::MAX,
+                data: &vec![0; max_data_size],
+                len: Some(u64::MAX),
+                image: Some(u32::MAX),
+                sha: Some(&[u8::MAX; 32]),
+                upgrade: Some(true),
+            };
+
+            let mut cbor_data = vec![];
+            ciborium::into_writer(&cmd, &mut cbor_data).unwrap();
+
+            assert!(
+                smp_payload_size - 2 <= cbor_data.len() && cbor_data.len() <= smp_payload_size,
+                "Failed at frame size {}: actual={}, max={}",
+                smp_frame_size,
+                cbor_data.len(),
+                smp_payload_size,
+            );
+        }
+    }
+
+    #[test]
+    fn image_upload_max_data_chunk_size_too_small() {
+        for smp_frame_size in 0..101 {
+            let max_data_size = super::image_upload_max_data_chunk_size(smp_frame_size);
+
+            assert!(max_data_size.is_err());
+        }
     }
 }

@@ -4,8 +4,9 @@ use serde::{Deserialize, Serialize};
 use serde_repr::Deserialize_repr;
 use strum::Display;
 
-use crate::commands::macros::{
-    impl_deserialize_from_empty_map_and_into_unit, impl_serialize_as_empty_map,
+use crate::commands::{
+    CountingWriter, data_too_large_error,
+    macros::{impl_deserialize_from_empty_map_and_into_unit, impl_serialize_as_empty_map},
 };
 
 use super::is_default;
@@ -28,35 +29,6 @@ pub struct FileDownloadResponse {
     pub data: Vec<u8>,
     /// length of file, this field is only mandatory when “off” is 0
     pub len: Option<u64>,
-}
-
-fn data_too_large_error() -> std::io::Error {
-    std::io::Error::other(Box::<dyn std::error::Error + Send + Sync>::from(
-        "Serialized data too large".to_string(),
-    ))
-}
-
-struct CountingWriter {
-    bytes_written: usize,
-}
-impl CountingWriter {
-    fn new() -> Self {
-        Self { bytes_written: 0 }
-    }
-}
-impl std::io::Write for CountingWriter {
-    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        let len = buf.len();
-        self.bytes_written = self
-            .bytes_written
-            .checked_add(len)
-            .ok_or_else(data_too_large_error)?;
-        Ok(len)
-    }
-
-    fn flush(&mut self) -> std::io::Result<()> {
-        Ok(())
-    }
 }
 
 /// Computes how large [`FileUpload::data`] is allowed to be.
