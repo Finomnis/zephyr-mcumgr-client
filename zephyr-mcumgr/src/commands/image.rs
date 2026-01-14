@@ -143,9 +143,9 @@ pub fn image_upload_max_data_chunk_size(smp_frame_size: usize) -> std::io::Resul
         return Err(data_too_large_error());
     } else if estimated_data_size <= u8::MAX as usize {
         1
-    } else if estimated_data_size < u16::MAX as usize {
+    } else if estimated_data_size <= u16::MAX as usize {
         2
-    } else if estimated_data_size < u32::MAX as usize {
+    } else if estimated_data_size <= u32::MAX as usize {
         4
     } else {
         8
