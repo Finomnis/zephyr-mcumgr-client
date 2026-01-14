@@ -546,12 +546,6 @@ impl MCUmgrClient {
 
         let mut checksum_matched = None;
 
-        if let Some(progress) = &mut progress {
-            if !progress(offset as u64, size as u64) {
-                return Err(ImageUploadError::ProgressCallbackError);
-            };
-        }
-
         while offset < size {
             let current_chunk_size = (size - offset).min(chunk_size_max);
             let chunk_data = &data[offset..offset + current_chunk_size];
@@ -733,12 +727,6 @@ impl MCUmgrClient {
         let mut data_buffer = vec![0u8; chunk_size_max].into_boxed_slice();
 
         let mut offset = 0;
-
-        if let Some(progress) = &mut progress {
-            if !progress(offset, size) {
-                return Err(FileUploadError::ProgressCallbackError);
-            };
-        }
 
         while offset < size {
             let current_chunk_size = (size - offset).min(data_buffer.len() as u64) as usize;
