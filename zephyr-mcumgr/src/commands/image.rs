@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
 
-use crate::commands::macros::{
-    impl_deserialize_from_empty_map_and_into_unit, impl_serialize_as_empty_map,
+use crate::commands::{
+    is_default,
+    macros::{impl_deserialize_from_empty_map_and_into_unit, impl_serialize_as_empty_map},
 };
 
 fn serialize_option_hex<S, T>(data: &Option<T>, serializer: S) -> Result<S::Ok, S::Error>
@@ -60,6 +61,50 @@ pub struct GetImageStateResponse {
     pub images: Vec<ImageState>,
     // splitStatus field is missing
     // because it is unused by Zephyr
+}
+
+/// [Image Upload](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_groups/smp_group_1.html#image-upload) command
+#[derive(Debug, Serialize, Eq, PartialEq)]
+pub struct ImageUpload<'a, 'b> {
+    /// optional image number, it does not have to appear in request at all, in which case it is assumed to be 0.
+    ///
+    /// Should only be present when “off” is 0.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub image: Option<u32>,
+    /// optional length of an image.
+    ///
+    /// Must appear when “off” is 0.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub len: Option<u64>,
+    /// offset of image chunk the request carries.
+    pub off: u64,
+    /// SHA256 hash of an upload; this is used to identify an upload session
+    /// (e.g. to allow MCUmgr to continue a broken session), and for image verification purposes.
+    /// This must be a full SHA256 hash of the whole image being uploaded, or not included if the hash
+    /// is not available (in which case, upload session continuation and image verification functionality will be unavailable).
+    ///
+    /// Should only be present when “off” is 0.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(with = "serde_bytes")]
+    pub sha: Option<&'a [u8; 32]>,
+    /// image data to write at provided offset.
+    #[serde(with = "serde_bytes")]
+    pub data: &'b [u8],
+    /// optional flag that states that only upgrade should be allowed, so if the version of uploaded software
+    /// is not higher then already on a device, the image upload will be rejected.
+    ///
+    /// Should only be present when “off” is 0.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub upgrade: Option<bool>,
+}
+
+/// Response for [`ImageUpload`] command
+#[derive(Debug, Deserialize, Eq, PartialEq)]
+pub struct ImageUploadResponse {
+    /// offset of last successfully written byte of update.
+    pub off: u64,
+    /// indicates if the uploaded data successfully matches the provided SHA256 hash or not
+    pub r#match: Option<bool>,
 }
 
 /// [Image Erase](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_groups/smp_group_1.html#image-erase) command
@@ -188,6 +233,59 @@ mod tests {
                     permanent: false,
                 }
             ],
+        },
+    }
+
+    command_encode_decode_test! {
+        upload_image_first,
+        (2, 1, 1),
+        ImageUpload{
+            image: Some(2),
+            len: Some(123456789123),
+            off: 0,
+            sha: Some(&[0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1]),
+            data: &[5,6,7,8],
+            upgrade: Some(false),
+        },
+        cbor!({
+            "image" => 2,
+            "len" => 123456789123u64,
+            "off" => 0,
+            "sha" => ciborium::Value::Bytes(vec![0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1]),
+            "data" => ciborium::Value::Bytes(vec![5,6,7,8]),
+            "upgrade" => false,
+        }),
+        cbor!({
+            "off" => 4,
+        }),
+        ImageUploadResponse {
+            off: 4,
+            r#match: None,
+        },
+    }
+
+    command_encode_decode_test! {
+        upload_image_last,
+        (2, 1, 1),
+        ImageUpload{
+            image: None,
+            len: None,
+            off: 123456789118,
+            sha: None,
+            data: &[100, 101, 102, 103, 104],
+            upgrade: None,
+        },
+        cbor!({
+            "off" => 123456789118u64,
+            "data" => ciborium::Value::Bytes(vec![100, 101, 102, 103, 104]),
+        }),
+        cbor!({
+            "off" => 123456789123u64,
+            "match" => false,
+        }),
+        ImageUploadResponse {
+            off: 123456789123,
+            r#match: Some(false),
         },
     }
 
