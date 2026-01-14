@@ -64,11 +64,9 @@ pub fn run(client: &Client, args: CommonArgs, command: ImageCommand) -> Result<(
         } => {
             let (data, source_filename) = read_input_file(&image_file)?;
 
-            with_progress_bar(
-                !args.quiet,
-                source_filename.as_ref().map(String::as_str),
-                |progress| client.image_upload(&data, image_id, checksum, upgrade_only, progress),
-            )?;
+            with_progress_bar(!args.quiet, source_filename.as_deref(), |progress| {
+                client.image_upload(&data, image_id, checksum, upgrade_only, progress)
+            })?;
         }
         ImageCommand::Erase { slot } => client.image_erase(slot)?,
         ImageCommand::SlotInfo => {
