@@ -530,7 +530,7 @@ impl MCUmgrClient {
         image: Option<u32>,
         sha: Option<[u8; 32]>,
         upgrade: bool,
-        mut progress: Option<&mut dyn FnMut(usize, usize) -> bool>,
+        mut progress: Option<&mut dyn FnMut(u64, u64) -> bool>,
     ) -> Result<(), ImageUploadError> {
         let chunk_size_max = image_upload_max_data_chunk_size(
             self.smp_frame_size
@@ -547,7 +547,7 @@ impl MCUmgrClient {
         let mut checksum_matched = None;
 
         if let Some(progress) = &mut progress {
-            if !progress(offset, size) {
+            if !progress(offset as u64, size as u64) {
                 return Err(ImageUploadError::ProgressCallbackError);
             };
         }
@@ -588,7 +588,7 @@ impl MCUmgrClient {
             }
 
             if let Some(progress) = &mut progress {
-                if !progress(offset, size) {
+                if !progress(offset as u64, size as u64) {
                     return Err(ImageUploadError::ProgressCallbackError);
                 };
             }

@@ -1,9 +1,23 @@
-use crate::{args::CommonArgs, client::Client, errors::CliError, formatting::structured_print};
+use crate::{
+    args::CommonArgs, client::Client, errors::CliError, file_read_write::read_input_file,
+    formatting::structured_print, progress::with_progress_bar,
+};
 
 #[derive(Debug, clap::Subcommand)]
 pub enum ImageCommand {
     /// Obtain a list of images with their current state
     GetState,
+    /// Upload a firmware image to the FPGA
+    Upload {
+        /// The file to copy. '-' for stdin.
+        image_file: String,
+        /// Selects target image on the device. Default: 0
+        #[arg(long)]
+        image_id: Option<u32>,
+        /// Prevent firmware downgrades
+        #[arg(long)]
+        upgrade_only: bool,
+    },
     /// Erase image slot on target device.
     Erase {
         /// The slot ID of the image to erase. Default: 1
@@ -38,6 +52,19 @@ pub fn run(client: &Client, args: CommonArgs, command: ImageCommand) -> Result<(
                     }
                 })?;
             }
+        }
+        ImageCommand::Upload {
+            image_file,
+            image_id,
+            upgrade_only,
+        } => {
+            let (data, source_filename) = read_input_file(&image_file)?;
+
+            with_progress_bar(
+                !args.quiet,
+                source_filename.as_ref().map(String::as_str),
+                |progress| client.image_upload(&data, image_id, None, upgrade_only, progress),
+            )?;
         }
         ImageCommand::Erase { slot } => client.image_erase(slot)?,
         ImageCommand::SlotInfo => {
