@@ -543,7 +543,6 @@ impl MCUmgrClient {
         .map_err(ImageUploadError::FrameSizeTooSmall)?;
 
         let data = data.as_ref();
-        // TODO perform checksum test on input data
 
         let actual_checksum: [u8; 32] = Sha256::digest(data).into();
         if let Some(checksum) = checksum {
