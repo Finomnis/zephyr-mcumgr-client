@@ -112,7 +112,7 @@ pub struct ImageUploadResponse {
 /// # Arguments
 ///
 /// * `smp_frame_size`  - The max allowed size of an SMP frame.
-/// * `filename`        - The filename we transfer to.
+///
 pub fn image_upload_max_data_chunk_size(smp_frame_size: usize) -> std::io::Result<usize> {
     const MGMT_HDR_SIZE: usize = 8; // Size of SMP header
 
