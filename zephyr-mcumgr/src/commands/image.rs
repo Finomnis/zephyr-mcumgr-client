@@ -1,8 +1,7 @@
 use serde::{Deserialize, Serialize};
 
-use crate::commands::{
-    is_default,
-    macros::{impl_deserialize_from_empty_map_and_into_unit, impl_serialize_as_empty_map},
+use crate::commands::macros::{
+    impl_deserialize_from_empty_map_and_into_unit, impl_serialize_as_empty_map,
 };
 
 fn serialize_option_hex<S, T>(data: &Option<T>, serializer: S) -> Result<S::Ok, S::Error>
