@@ -1,6 +1,6 @@
 use crate::{
     args::CommonArgs, client::Client, errors::CliError, file_read_write::read_input_file,
-    formatting::structured_print, progress::with_progress_bar,
+    formatting::structured_print, groups::parse_sha256, progress::with_progress_bar,
 };
 
 #[derive(Debug, clap::Subcommand)]
@@ -17,6 +17,9 @@ pub enum ImageCommand {
         /// Prevent firmware downgrades
         #[arg(long)]
         upgrade_only: bool,
+        /// SHA-256 checksum of the image file
+        #[arg(long, value_parser=parse_sha256)]
+        checksum: Option<[u8; 32]>,
     },
     /// Erase image slot on target device.
     Erase {
@@ -57,13 +60,14 @@ pub fn run(client: &Client, args: CommonArgs, command: ImageCommand) -> Result<(
             image_file,
             image_id,
             upgrade_only,
+            checksum,
         } => {
             let (data, source_filename) = read_input_file(&image_file)?;
 
             with_progress_bar(
                 !args.quiet,
                 source_filename.as_ref().map(String::as_str),
-                |progress| client.image_upload(&data, image_id, None, upgrade_only, progress),
+                |progress| client.image_upload(&data, image_id, checksum, upgrade_only, progress),
             )?;
         }
         ImageCommand::Erase { slot } => client.image_erase(slot)?,

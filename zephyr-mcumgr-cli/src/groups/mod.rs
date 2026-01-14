@@ -1,3 +1,5 @@
+use miette::IntoDiagnostic;
+
 use crate::{args::CommonArgs, client::Client, errors::CliError};
 
 mod fs;
@@ -55,4 +57,11 @@ pub fn run(client: &Client, args: CommonArgs, group: Group) -> Result<(), CliErr
         Group::Zephyr { command } => zephyr::run(client, args, command),
         Group::Raw(raw_command) => raw::run(client, args, raw_command),
     }
+}
+
+fn parse_sha256(s: &str) -> miette::Result<[u8; 32]> {
+    hex::decode(s)
+        .into_diagnostic()?
+        .try_into()
+        .map_err(|_| miette::miette!("Incorrect length for SHA-256"))
 }
