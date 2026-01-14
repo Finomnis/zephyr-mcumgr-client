@@ -522,6 +522,7 @@ impl MCUmgrClient {
     /// * `image` - The image ID to upload. Defaults to `0`.
     /// * `sha` - The SHA256 checksum of the image. If missing, will be computed from the image data.
     /// * `upgrade` - If true, allow firmware upgrades only and reject downgrades.
+    /// * `progress` - A callback that receives a pair of (transferred, total) bytes and returns false on error.
     ///
     pub fn image_upload(
         &self,
@@ -529,6 +530,7 @@ impl MCUmgrClient {
         image: Option<u32>,
         sha: Option<[u8; 32]>,
         upgrade: bool,
+        mut progress: Option<&mut dyn FnMut(usize, usize) -> bool>,
     ) -> Result<(), ImageUploadError> {
         let chunk_size_max = image_upload_max_data_chunk_size(
             self.smp_frame_size
@@ -540,18 +542,25 @@ impl MCUmgrClient {
         let sha = sha.unwrap_or_else(|| Sha256::digest(data).into());
 
         let mut offset = 0;
+        let size = data.len();
 
         let mut checksum_matched = None;
 
-        while offset < data.len() {
-            let current_chunk_size = (data.len() - offset).min(chunk_size_max);
+        if let Some(progress) = &mut progress {
+            if !progress(offset, size) {
+                return Err(ImageUploadError::ProgressCallbackError);
+            };
+        }
+
+        while offset < size {
+            let current_chunk_size = (size - offset).min(chunk_size_max);
             let chunk_data = &data[offset..offset + current_chunk_size];
 
             let upload_response = if offset == 0 {
                 self.connection
                     .execute_command(&commands::image::ImageUpload {
                         image,
-                        len: Some(data.len() as u64),
+                        len: Some(size as u64),
                         off: offset as u64,
                         sha: Some(&sha),
                         data: chunk_data,
@@ -574,8 +583,14 @@ impl MCUmgrClient {
                 .try_into()
                 .map_err(|_| ImageUploadError::UnexpectedOffset)?;
 
-            if offset > data.len() {
+            if offset > size {
                 return Err(ImageUploadError::UnexpectedOffset);
+            }
+
+            if let Some(progress) = &mut progress {
+                if !progress(offset, size) {
+                    return Err(ImageUploadError::ProgressCallbackError);
+                };
             }
 
             if let Some(is_match) = upload_response.r#match {
@@ -718,6 +733,12 @@ impl MCUmgrClient {
         let mut data_buffer = vec![0u8; chunk_size_max].into_boxed_slice();
 
         let mut offset = 0;
+
+        if let Some(progress) = &mut progress {
+            if !progress(offset, size) {
+                return Err(FileUploadError::ProgressCallbackError);
+            };
+        }
 
         while offset < size {
             let current_chunk_size = (size - offset).min(data_buffer.len() as u64) as usize;
