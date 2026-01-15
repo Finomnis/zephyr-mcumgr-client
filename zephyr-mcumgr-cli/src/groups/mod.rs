@@ -59,9 +59,8 @@ pub fn run(client: &Client, args: CommonArgs, group: Group) -> Result<(), CliErr
     }
 }
 
-fn parse_sha256(s: &str) -> miette::Result<[u8; 32]> {
-    hex::decode(s)
-        .into_diagnostic()?
-        .try_into()
-        .map_err(|_| miette::miette!("Incorrect length for SHA-256"))
+fn parse_sha256(s: &str) -> Result<[u8; 32], hex::FromHexError> {
+    let mut data = [0u8; 32];
+    hex::decode_to_slice(s, &mut data)?;
+    Ok(data)
 }

@@ -14,6 +14,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use crate::raw_py_any_command::RawPyAnyCommand;
+use crate::sha256_type::Sha256;
 
 mod return_types;
 pub use return_types::*;
@@ -21,6 +22,7 @@ pub use return_types::*;
 mod mcuboot;
 mod raw_py_any_command;
 mod repr_macro;
+mod sha256_type;
 
 /// A high level client for Zephyr's MCUmgr SMP functionality
 #[gen_stub_pyclass]
@@ -33,14 +35,6 @@ struct MCUmgrClient {
 fn err_to_pyerr<E: Into<miette::Report>>(err: E) -> PyErr {
     let e: miette::Report = err.into();
     PyRuntimeError::new_err(format!("{e:?}"))
-}
-
-fn parse_sha256(s: &str) -> PyResult<[u8; 32]> {
-    hex::decode(s)
-        .into_diagnostic()
-        .map_err(err_to_pyerr)?
-        .try_into()
-        .map_err(|_| PyRuntimeError::new_err("Incorrect length for SHA-256"))
 }
 
 impl MCUmgrClient {
@@ -284,7 +278,7 @@ impl MCUmgrClient {
         &self,
         data: &Bound<'py, PyBytes>,
         image: Option<u32>,
-        checksum: Option<&str>,
+        checksum: Option<Sha256>,
         upgrade_only: bool,
         #[gen_stub(override_type(type_repr="typing.Optional[collections.abc.Callable[[builtins.int, builtins.int], None]]", imports=("builtins", "collections.abc", "typing")))]
         progress: Option<Bound<'py, PyAny>>,
@@ -293,7 +287,7 @@ impl MCUmgrClient {
 
         let mut cb_error = None;
 
-        let checksum = checksum.map(parse_sha256).transpose()?;
+        let checksum = checksum.map(|val| val.0);
 
         let res = if let Some(progress) = progress {
             let mut cb = |current, total| match progress.call((current, total), None) {
