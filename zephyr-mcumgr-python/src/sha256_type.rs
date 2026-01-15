@@ -45,6 +45,6 @@ impl pyo3_stub_gen::PyStubType for Sha256 {
     }
 
     fn type_output() -> pyo3_stub_gen::TypeInfo {
-        pyo3_stub_gen::TypeInfo::builtin("bytes")
+        panic!("Sha256 is only an input type")
     }
 }
