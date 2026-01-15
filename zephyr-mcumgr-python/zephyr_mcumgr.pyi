@@ -250,7 +250,7 @@ class MCUmgrClient:
         r"""
         Obtain a list of images with their current state.
         """
-    def image_upload(self, data: bytes, image: typing.Optional[builtins.int] = None, checksum: typing.Optional[builtins.str] = None, upgrade_only: builtins.bool = False, progress: typing.Optional[collections.abc.Callable[[builtins.int, builtins.int], None]] = None) -> None:
+    def image_upload(self, data: bytes, image: typing.Optional[builtins.int] = None, checksum: typing.Optional[builtins.str | builtins.bytes] = None, upgrade_only: builtins.bool = False, progress: typing.Optional[collections.abc.Callable[[builtins.int, builtins.int], None]] = None) -> None:
         r"""
         Upload a firmware image to an image slot.
         
