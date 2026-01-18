@@ -14,6 +14,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use crate::raw_py_any_command::RawPyAnyCommand;
+use crate::sha256_type::Sha256;
 
 mod return_types;
 pub use return_types::*;
@@ -21,6 +22,7 @@ pub use return_types::*;
 mod mcuboot;
 mod raw_py_any_command;
 mod repr_macro;
+mod sha256_type;
 
 /// A high level client for Zephyr's MCUmgr SMP functionality
 #[gen_stub_pyclass]
@@ -251,6 +253,62 @@ impl MCUmgrClient {
             .into_iter()
             .map(|val| ImageState::from_response(py, val))
             .collect())
+    }
+
+    /// Upload a firmware image to an image slot.
+    ///
+    /// ### Arguments
+    ///
+    /// * `data` - The firmware image data
+    /// * `image` - Selects target image on the device. Defaults to `0`.
+    /// * `checksum` - The SHA256 checksum of the image. If missing, will be computed from the image data.
+    /// * `upgrade_only` - If true, allow firmware upgrades only and reject downgrades.
+    /// * `progress` - A callable object that takes (transmitted, total) values as parameters.
+    ///                Any return value is ignored. Raising an exception aborts the operation.
+    ///
+    /// ### Performance
+    ///
+    /// Uploading files with Zephyr's default parameters is slow.
+    /// You want to increase [`MCUMGR_TRANSPORT_NETBUF_SIZE`](https://github.com/zephyrproject-rtos/zephyr/blob/v4.2.1/subsys/mgmt/mcumgr/transport/Kconfig#L40)
+    /// to maybe `4096` and then enable larger chunking through either `set_frame_size`
+    /// or `use_auto_frame_size`.
+    ///
+    #[pyo3(signature = (data, image=None, checksum=None, upgrade_only=false, progress=None))]
+    pub fn image_upload<'py>(
+        &self,
+        data: &Bound<'py, PyBytes>,
+        image: Option<u32>,
+        checksum: Option<Sha256>,
+        upgrade_only: bool,
+        #[gen_stub(override_type(type_repr="typing.Optional[collections.abc.Callable[[builtins.int, builtins.int], None]]", imports=("builtins", "collections.abc", "typing")))]
+        progress: Option<Bound<'py, PyAny>>,
+    ) -> PyResult<()> {
+        let bytes: &[u8] = data.extract()?;
+
+        let mut cb_error = None;
+
+        let checksum = checksum.map(|val| val.0);
+
+        let res = if let Some(progress) = progress {
+            let mut cb = |current, total| match progress.call((current, total), None) {
+                Ok(_) => true,
+                Err(e) => {
+                    cb_error = Some(e);
+                    false
+                }
+            };
+            self.get_client()?
+                .image_upload(bytes, image, checksum, upgrade_only, Some(&mut cb))
+        } else {
+            self.get_client()?
+                .image_upload(bytes, image, checksum, upgrade_only, None)
+        };
+
+        if let Some(cb_error) = cb_error {
+            return Err(cb_error);
+        }
+
+        res.map_err(err_to_pyerr)
     }
 
     /// Erase image slot on target device.

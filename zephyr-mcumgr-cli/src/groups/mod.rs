@@ -56,3 +56,9 @@ pub fn run(client: &Client, args: CommonArgs, group: Group) -> Result<(), CliErr
         Group::Raw(raw_command) => raw::run(client, args, raw_command),
     }
 }
+
+fn parse_sha256(s: &str) -> Result<[u8; 32], hex::FromHexError> {
+    let mut data = [0u8; 32];
+    hex::decode_to_slice(s, &mut data)?;
+    Ok(data)
+}

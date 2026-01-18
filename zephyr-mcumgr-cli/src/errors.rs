@@ -3,7 +3,7 @@ use thiserror::Error;
 
 use zephyr_mcumgr::{
     Errno,
-    client::{FileDownloadError, FileUploadError, UsbSerialError},
+    client::{FileDownloadError, FileUploadError, ImageUploadError, UsbSerialError},
     connection::ExecuteError,
     mcuboot::ImageParseError,
 };
@@ -44,6 +44,9 @@ pub enum CliError {
     #[error("File download failed")]
     #[diagnostic(code(zephyr_mcumgr::cli::file_download))]
     FileDownloadFailed(#[from] FileDownloadError),
+    #[error("Image upload failed")]
+    #[diagnostic(code(zephyr_mcumgr::cli::image_upload))]
+    ImageUploadFailed(#[from] ImageUploadError),
     #[error("Failed to parse datetime string")]
     #[diagnostic(code(zephyr_mcumgr::cli::chrono_parse))]
     ChronoParseFailed(#[from] chrono::ParseError),

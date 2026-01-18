@@ -1,10 +1,27 @@
-use crate::{args::CommonArgs, client::Client, errors::CliError, formatting::structured_print};
+use crate::{
+    args::CommonArgs, client::Client, errors::CliError, file_read_write::read_input_file,
+    formatting::structured_print, groups::parse_sha256, progress::with_progress_bar,
+};
 
 #[derive(Debug, clap::Subcommand)]
 pub enum ImageCommand {
     /// Obtain a list of images with their current state
     GetState,
-    /// Erase image slot on target device.
+    /// Upload a firmware image to the device
+    Upload {
+        /// The file to copy. '-' for stdin.
+        image_file: String,
+        /// Selects target image on the device. Default: 0
+        #[arg(long)]
+        image_id: Option<u32>,
+        /// Prevent firmware downgrades
+        #[arg(long)]
+        upgrade_only: bool,
+        /// SHA-256 checksum of the image file
+        #[arg(long, value_parser=parse_sha256)]
+        checksum: Option<[u8; 32]>,
+    },
+    /// Erase image slot on target device
     Erase {
         /// The slot ID of the image to erase. Default: 1
         slot: Option<u32>,
@@ -39,6 +56,18 @@ pub fn run(client: &Client, args: CommonArgs, command: ImageCommand) -> Result<(
                 })?;
             }
         }
+        ImageCommand::Upload {
+            image_file,
+            image_id,
+            upgrade_only,
+            checksum,
+        } => {
+            let (data, source_filename) = read_input_file(&image_file)?;
+
+            with_progress_bar(!args.quiet, source_filename.as_deref(), |progress| {
+                client.image_upload(&data, image_id, checksum, upgrade_only, progress)
+            })?;
+        }
         ImageCommand::Erase { slot } => client.image_erase(slot)?,
         ImageCommand::SlotInfo => {
             let images = client.image_slot_info()?;
@@ -53,6 +82,7 @@ pub fn run(client: &Client, args: CommonArgs, command: ImageCommand) -> Result<(
                         s.sublist(format!("Image {}", image.image), |s| {
                             for slot in image.slots {
                                 s.sublist(format!("Slot {}", slot.slot), |s| {
+                                    s.unaligned();
                                     s.key_value("size", slot.size);
                                     s.key_value_maybe("upload_image_id", slot.upload_image_id);
                                 });

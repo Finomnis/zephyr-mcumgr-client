@@ -55,6 +55,36 @@ fn is_default<T: Default + PartialEq>(val: &T) -> bool {
     val == &T::default()
 }
 
+fn data_too_large_error() -> std::io::Error {
+    std::io::Error::other(Box::<dyn std::error::Error + Send + Sync>::from(
+        "Serialized data too large".to_string(),
+    ))
+}
+
+// A writer that simply counts the number of bytes written to it
+struct CountingWriter {
+    bytes_written: usize,
+}
+impl CountingWriter {
+    fn new() -> Self {
+        Self { bytes_written: 0 }
+    }
+}
+impl std::io::Write for CountingWriter {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        let len = buf.len();
+        self.bytes_written = self
+            .bytes_written
+            .checked_add(len)
+            .ok_or_else(data_too_large_error)?;
+        Ok(len)
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        Ok(())
+    }
+}
+
 impl_mcumgr_command!((read,  MGMT_GROUP_ID_OS, 0): os::Echo<'_> => os::EchoResponse);
 impl_mcumgr_command!((read,  MGMT_GROUP_ID_OS, 2): os::TaskStatistics => os::TaskStatisticsResponse);
 impl_mcumgr_command!((read,  MGMT_GROUP_ID_OS, 4): os::DateTimeGet => os::DateTimeGetResponse);
@@ -66,6 +96,7 @@ impl_mcumgr_command!((read,  MGMT_GROUP_ID_OS, 8): os::BootloaderInfo => os::Boo
 impl_mcumgr_command!((read,  MGMT_GROUP_ID_OS, 8): os::BootloaderInfoMcubootMode => os::BootloaderInfoMcubootModeResponse);
 
 impl_mcumgr_command!((read,  MGMT_GROUP_ID_IMAGE, 0): image::GetImageState => image::GetImageStateResponse);
+impl_mcumgr_command!((write,  MGMT_GROUP_ID_IMAGE, 1): image::ImageUpload<'_, '_> => image::ImageUploadResponse);
 impl_mcumgr_command!((write,  MGMT_GROUP_ID_IMAGE, 5): image::ImageErase => image::ImageEraseResponse);
 impl_mcumgr_command!((read,  MGMT_GROUP_ID_IMAGE, 6): image::SlotInfo => image::SlotInfoResponse);
 

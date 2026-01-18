@@ -8,11 +8,14 @@ use std::{
 use miette::Diagnostic;
 use rand::distr::SampleString;
 use serde::Serialize;
+use sha2::{Digest, Sha256};
 use thiserror::Error;
 
 use crate::{
     bootloader::BootloaderInfo,
-    commands::{self, fs::file_upload_max_data_chunk_size},
+    commands::{
+        self, fs::file_upload_max_data_chunk_size, image::image_upload_max_data_chunk_size,
+    },
     connection::{Connection, ExecuteError},
     transport::serial::{ConfigurableTimeout, SerialTransport},
 };
@@ -78,6 +81,35 @@ pub enum FileUploadError {
     #[error("SMP frame size too small for this command")]
     #[diagnostic(code(zephyr_mcumgr::client::file_upload::framesize_too_small))]
     FrameSizeTooSmall(#[source] io::Error),
+}
+
+/// Possible error values of [`MCUmgrClient::image_upload`].
+#[derive(Error, Debug, Diagnostic)]
+pub enum ImageUploadError {
+    /// The command failed in the SMP protocol layer.
+    #[error("Command execution failed")]
+    #[diagnostic(code(zephyr_mcumgr::client::image_upload::execute))]
+    ExecuteError(#[from] ExecuteError),
+    /// The progress callback returned an error.
+    #[error("Progress callback returned an error")]
+    #[diagnostic(code(zephyr_mcumgr::client::image_upload::progress_cb_error))]
+    ProgressCallbackError,
+    /// The current SMP frame size is too small for this command.
+    #[error("SMP frame size too small for this command")]
+    #[diagnostic(code(zephyr_mcumgr::client::image_upload::framesize_too_small))]
+    FrameSizeTooSmall(#[source] io::Error),
+    /// A device response contained an unexpected offset value.
+    #[error("Received offset out of expected range")]
+    #[diagnostic(code(zephyr_mcumgr::client::image_upload::invalid_offset))]
+    UnexpectedOffset,
+    /// The device reported a checksum mismatch
+    #[error("Device reported checksum mismatch")]
+    #[diagnostic(code(zephyr_mcumgr::client::image_upload::checksum_mismatch_on_device))]
+    ChecksumMismatchOnDevice,
+    /// The firmware image does not match the given checksum
+    #[error("Firmware image does not match given checksum")]
+    #[diagnostic(code(zephyr_mcumgr::client::image_upload::checksum_mismatch))]
+    ChecksumMismatch,
 }
 
 /// Information about a serial port
@@ -484,6 +516,101 @@ impl MCUmgrClient {
         self.connection
             .execute_command(&commands::image::GetImageState)
             .map(|val| val.images)
+    }
+
+    /// Upload a firmware image to an image slot.
+    ///
+    /// # Arguments
+    ///
+    /// * `data` - The firmware image data
+    /// * `image` - Selects target image on the device. Defaults to `0`.
+    /// * `checksum` - The SHA256 checksum of the image. If missing, will be computed from the image data.
+    /// * `upgrade_only` - If true, allow firmware upgrades only and reject downgrades.
+    /// * `progress` - A callback that receives a pair of (transferred, total) bytes and returns false on error.
+    ///
+    pub fn image_upload(
+        &self,
+        data: impl AsRef<[u8]>,
+        image: Option<u32>,
+        checksum: Option<[u8; 32]>,
+        upgrade_only: bool,
+        mut progress: Option<&mut dyn FnMut(u64, u64) -> bool>,
+    ) -> Result<(), ImageUploadError> {
+        let chunk_size_max = image_upload_max_data_chunk_size(
+            self.smp_frame_size
+                .load(std::sync::atomic::Ordering::SeqCst),
+        )
+        .map_err(ImageUploadError::FrameSizeTooSmall)?;
+
+        let data = data.as_ref();
+
+        let actual_checksum: [u8; 32] = Sha256::digest(data).into();
+        if let Some(checksum) = checksum {
+            if actual_checksum != checksum {
+                return Err(ImageUploadError::ChecksumMismatch);
+            }
+        }
+
+        let mut offset = 0;
+        let size = data.len();
+
+        let mut checksum_matched = None;
+
+        while offset < size {
+            let current_chunk_size = (size - offset).min(chunk_size_max);
+            let chunk_data = &data[offset..offset + current_chunk_size];
+
+            let upload_response = if offset == 0 {
+                self.connection
+                    .execute_command(&commands::image::ImageUpload {
+                        image,
+                        len: Some(size as u64),
+                        off: offset as u64,
+                        sha: Some(&actual_checksum),
+                        data: chunk_data,
+                        upgrade: Some(upgrade_only),
+                    })?
+            } else {
+                self.connection
+                    .execute_command(&commands::image::ImageUpload {
+                        image: None,
+                        len: None,
+                        off: offset as u64,
+                        sha: None,
+                        data: chunk_data,
+                        upgrade: None,
+                    })?
+            };
+
+            offset = upload_response
+                .off
+                .try_into()
+                .map_err(|_| ImageUploadError::UnexpectedOffset)?;
+
+            if offset > size {
+                return Err(ImageUploadError::UnexpectedOffset);
+            }
+
+            if let Some(progress) = &mut progress {
+                if !progress(offset as u64, size as u64) {
+                    return Err(ImageUploadError::ProgressCallbackError);
+                };
+            }
+
+            if let Some(is_match) = upload_response.r#match {
+                checksum_matched = Some(is_match);
+            }
+        }
+
+        if let Some(checksum_matched) = checksum_matched {
+            if !checksum_matched {
+                return Err(ImageUploadError::ChecksumMismatchOnDevice);
+            }
+        } else {
+            log::warn!("Device did not perform image checksum verification");
+        }
+
+        Ok(())
     }
 
     /// Erase image slot on target device.
