@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 
+use indicatif::MultiProgress;
 use zephyr_mcumgr::{
     bootloader::{BootloaderInfo, MCUbootMode},
     commands::os::ThreadStateFlags,
@@ -129,7 +130,12 @@ impl ApplicationInfoFlags {
     }
 }
 
-pub fn run(client: &Client, args: CommonArgs, command: OsCommand) -> Result<(), CliError> {
+pub fn run(
+    client: &Client,
+    _multiprogress: &MultiProgress,
+    args: CommonArgs,
+    command: OsCommand,
+) -> Result<(), CliError> {
     let client = client.get()?;
     match command {
         OsCommand::Echo { msg } => println!("{}", client.os_echo(msg)?),

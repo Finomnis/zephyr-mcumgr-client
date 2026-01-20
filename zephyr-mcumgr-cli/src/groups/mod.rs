@@ -1,3 +1,5 @@
+use indicatif::MultiProgress;
+
 use crate::{args::CommonArgs, client::Client, errors::CliError};
 
 mod fs;
@@ -45,15 +47,20 @@ pub enum Group {
     Raw(#[command(flatten)] raw::RawCommand),
 }
 
-pub fn run(client: &Client, args: CommonArgs, group: Group) -> Result<(), CliError> {
+pub fn run(
+    client: &Client,
+    multiprogress: &MultiProgress,
+    args: CommonArgs,
+    group: Group,
+) -> Result<(), CliError> {
     match group {
-        Group::Os { command } => os::run(client, args, command),
-        Group::Image { command } => image::run(client, args, command),
-        Group::Mcuboot { command } => mcuboot::run(client, args, command),
-        Group::Fs { command } => fs::run(client, args, command),
-        Group::Shell { argv } => shell::run(client, args, argv),
-        Group::Zephyr { command } => zephyr::run(client, args, command),
-        Group::Raw(raw_command) => raw::run(client, args, raw_command),
+        Group::Os { command } => os::run(client, multiprogress, args, command),
+        Group::Image { command } => image::run(client, multiprogress, args, command),
+        Group::Mcuboot { command } => mcuboot::run(client, multiprogress, args, command),
+        Group::Fs { command } => fs::run(client, multiprogress, args, command),
+        Group::Shell { argv } => shell::run(client, multiprogress, args, argv),
+        Group::Zephyr { command } => zephyr::run(client, multiprogress, args, command),
+        Group::Raw(raw_command) => raw::run(client, multiprogress, args, raw_command),
     }
 }
 

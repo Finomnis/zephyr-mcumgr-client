@@ -1,3 +1,5 @@
+use indicatif::MultiProgress;
+
 use crate::{args::CommonArgs, client::Client, errors::CliError};
 
 #[derive(Debug, clap::Subcommand)]
@@ -6,7 +8,12 @@ pub enum ZephyrCommand {
     EraseStorage,
 }
 
-pub fn run(client: &Client, _args: CommonArgs, command: ZephyrCommand) -> Result<(), CliError> {
+pub fn run(
+    client: &Client,
+    _multiprogress: &MultiProgress,
+    _args: CommonArgs,
+    command: ZephyrCommand,
+) -> Result<(), CliError> {
     let client = client.get()?;
 
     match command {

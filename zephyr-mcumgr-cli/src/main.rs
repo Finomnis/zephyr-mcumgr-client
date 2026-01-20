@@ -9,6 +9,8 @@ mod groups;
 mod progress;
 
 use client::Client;
+use indicatif::MultiProgress;
+use indicatif_log_bridge::LogWrapper;
 
 use std::time::Duration;
 
@@ -18,7 +20,19 @@ use zephyr_mcumgr::{MCUmgrClient, client::UsbSerialError};
 use crate::errors::CliError;
 
 fn cli_main() -> Result<(), CliError> {
-    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
+    let multiprogress = {
+        let logger =
+            env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"))
+                .build();
+        let level = logger.filter();
+        let multiprogress = MultiProgress::new();
+        LogWrapper::new(multiprogress.clone(), logger)
+            .try_init()
+            .unwrap();
+        log::set_max_level(level);
+
+        multiprogress
+    };
 
     let args = args::App::parse();
 
@@ -68,7 +82,7 @@ fn cli_main() -> Result<(), CliError> {
     }
 
     if let Some(group) = args.group {
-        groups::run(&client, args.common, group)?;
+        groups::run(&client, &multiprogress, args.common, group)?;
     } else {
         client.get()?.check_connection()?;
         println!("Device alive and responsive.");

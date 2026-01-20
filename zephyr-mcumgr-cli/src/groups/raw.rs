@@ -1,3 +1,5 @@
+use indicatif::MultiProgress;
+
 use crate::{args::CommonArgs, client::Client, errors::CliError};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, clap::ValueEnum)]
@@ -50,7 +52,12 @@ impl zephyr_mcumgr::commands::McuMgrCommand for RawCommand {
     }
 }
 
-pub fn run(client: &Client, _args: CommonArgs, command: RawCommand) -> Result<(), CliError> {
+pub fn run(
+    client: &Client,
+    _multiprogress: &MultiProgress,
+    _args: CommonArgs,
+    command: RawCommand,
+) -> Result<(), CliError> {
     let client = client.get()?;
     let response = client.raw_command(&command)?;
 

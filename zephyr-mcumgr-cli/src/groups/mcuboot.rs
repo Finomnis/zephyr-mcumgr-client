@@ -1,3 +1,5 @@
+use indicatif::MultiProgress;
+
 use crate::{
     args::CommonArgs, client::Client, errors::CliError, file_read_write::read_input_file,
     formatting::structured_print,
@@ -12,7 +14,12 @@ pub enum MCUbootCommand {
     },
 }
 
-pub fn run(_client: &Client, args: CommonArgs, command: MCUbootCommand) -> Result<(), CliError> {
+pub fn run(
+    _client: &Client,
+    _multiprogress: &MultiProgress,
+    args: CommonArgs,
+    command: MCUbootCommand,
+) -> Result<(), CliError> {
     match command {
         MCUbootCommand::GetImageInfo { file } => {
             let (image_data, _source_filename) = read_input_file(&file)?;

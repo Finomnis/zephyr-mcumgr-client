@@ -1,6 +1,13 @@
+use indicatif::MultiProgress;
+
 use crate::{args::CommonArgs, client::Client, errors::CliError};
 
-pub fn run(client: &Client, _args: CommonArgs, argv: Vec<String>) -> Result<(), CliError> {
+pub fn run(
+    client: &Client,
+    _multiprogress: &MultiProgress,
+    _args: CommonArgs,
+    argv: Vec<String>,
+) -> Result<(), CliError> {
     let client = client.get()?;
     let (returncode, output) = client.shell_execute(&argv)?;
     println!("{output}");

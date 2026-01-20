@@ -605,6 +605,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "indicatif-log-bridge"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "63703cf9069b85dbe6fe26e1c5230d013dee99d3559cd3d02ba39e099ef7ab02"
+dependencies = [
+ "indicatif",
+ "log",
+]
+
+[[package]]
 name = "indoc"
 version = "2.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2180,6 +2190,7 @@ dependencies = [
  "env_logger",
  "hex",
  "indicatif",
+ "indicatif-log-bridge",
  "log",
  "miette",
  "serde_json",

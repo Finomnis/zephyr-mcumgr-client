@@ -1,5 +1,7 @@
 use std::collections::BTreeMap;
 
+use indicatif::MultiProgress;
+
 use crate::{
     args::CommonArgs,
     client::Client,
@@ -51,12 +53,17 @@ pub enum FsCommand {
     Close,
 }
 
-pub fn run(client: &Client, args: CommonArgs, command: FsCommand) -> Result<(), CliError> {
+pub fn run(
+    client: &Client,
+    multiprogress: &MultiProgress,
+    args: CommonArgs,
+    command: FsCommand,
+) -> Result<(), CliError> {
     let client = client.get()?;
     match command {
         FsCommand::Download { remote, local } => {
             let mut data = vec![];
-            with_progress_bar(!args.quiet, Some(&remote), |progress| {
+            with_progress_bar(multiprogress, !args.quiet, Some(&remote), |progress| {
                 client.fs_file_download(remote.as_str(), &mut data, progress)
             })?;
 
@@ -73,7 +80,7 @@ pub fn run(client: &Client, args: CommonArgs, command: FsCommand) -> Result<(), 
                 remote.push_str(&filename);
             }
 
-            with_progress_bar(!args.quiet, Some(&remote), |progress| {
+            with_progress_bar(multiprogress, !args.quiet, Some(&remote), |progress| {
                 client.fs_file_upload(remote.as_str(), &*data, data.len() as u64, progress)
             })?;
         }
