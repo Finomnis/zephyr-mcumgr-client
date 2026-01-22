@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `upload`
 - Refactor cli color output, remove `termcolor` dependency
 
+### Fixes
+
+- Log messages colliding with progress bar
+
 ## [0.6.2] - 2026-01-13
 
 ### Changes
