@@ -54,13 +54,33 @@ pub struct ImageState {
 pub struct GetImageState;
 impl_serialize_as_empty_map!(GetImageState);
 
-/// Response for [`GetImageState`] command
+/// Response for [`GetImageState`] and [`SetImageState`] commands
 #[derive(Debug, Deserialize, Eq, PartialEq)]
-pub struct GetImageStateResponse {
+pub struct ImageStateResponse {
     /// List of all images and their state
     pub images: Vec<ImageState>,
     // splitStatus field is missing
     // because it is unused by Zephyr
+}
+
+/// [Set Image State](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_groups/smp_group_1.html#set-state-of-image-request) command
+#[derive(Debug, Serialize, Eq, PartialEq)]
+pub struct SetImageState<'a> {
+    /// SHA256 hash of the image header and body
+    ///
+    /// If `confirm` is `true` this can be omitted, which will select the currently running image.
+    ///
+    /// Note that this will not be the same as the SHA256 of the whole file, it is the field in the
+    /// MCUboot TLV section that contains a hash of the data which is used for signature
+    /// verification purposes.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(with = "serde_bytes")]
+    pub hash: Option<&'a [u8; 32]>,
+    /// If true, set the given image to 'confirmed'.
+    ///
+    /// If false, perform a test boot with the given image
+    /// and revert upon hard reset.
+    pub confirm: bool,
 }
 
 /// [Image Upload](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_groups/smp_group_1.html#image-upload) command
@@ -253,7 +273,7 @@ mod tests {
             ],
             "splitStatus" => 42,
         }),
-        GetImageStateResponse{
+        ImageStateResponse{
             images: vec![
                 ImageState{
                     image: 3,
@@ -289,6 +309,43 @@ mod tests {
                     permanent: false,
                 }
             ],
+        },
+    }
+
+    command_encode_decode_test! {
+        set_image_state_temp,
+        (2, 1, 0),
+        SetImageState {
+            confirm: false,
+            hash: Some(&[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32]),
+        },
+        cbor!({
+            "hash" => ciborium::Value::Bytes(vec![1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32]),
+            "confirm" => false,
+        }),
+        cbor!({
+            "images" => [],
+        }),
+        ImageStateResponse{
+            images: vec![],
+        },
+    }
+
+    command_encode_decode_test! {
+        set_image_state_perm,
+        (2, 1, 0),
+        SetImageState {
+            confirm: true,
+            hash: None,
+        },
+        cbor!({
+            "confirm" => true,
+        }),
+        cbor!({
+            "images" => [],
+        }),
+        ImageStateResponse{
+            images: vec![],
         },
     }
 

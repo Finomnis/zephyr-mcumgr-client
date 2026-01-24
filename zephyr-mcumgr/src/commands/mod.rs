@@ -95,7 +95,8 @@ impl_mcumgr_command!((read,  MGMT_GROUP_ID_OS, 7): os::ApplicationInfo<'_> => os
 impl_mcumgr_command!((read,  MGMT_GROUP_ID_OS, 8): os::BootloaderInfo => os::BootloaderInfoResponse);
 impl_mcumgr_command!((read,  MGMT_GROUP_ID_OS, 8): os::BootloaderInfoMcubootMode => os::BootloaderInfoMcubootModeResponse);
 
-impl_mcumgr_command!((read,  MGMT_GROUP_ID_IMAGE, 0): image::GetImageState => image::GetImageStateResponse);
+impl_mcumgr_command!((read,  MGMT_GROUP_ID_IMAGE, 0): image::GetImageState => image::ImageStateResponse);
+impl_mcumgr_command!((write,  MGMT_GROUP_ID_IMAGE, 0): image::SetImageState<'_> => image::ImageStateResponse);
 impl_mcumgr_command!((write,  MGMT_GROUP_ID_IMAGE, 1): image::ImageUpload<'_, '_> => image::ImageUploadResponse);
 impl_mcumgr_command!((write,  MGMT_GROUP_ID_IMAGE, 5): image::ImageErase => image::ImageEraseResponse);
 impl_mcumgr_command!((read,  MGMT_GROUP_ID_IMAGE, 6): image::SlotInfo => image::SlotInfoResponse);
