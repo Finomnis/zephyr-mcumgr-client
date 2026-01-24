@@ -255,6 +255,40 @@ impl MCUmgrClient {
             .collect())
     }
 
+    /// Modify the current image state and return the new state
+    ///
+    /// ### Arguments
+    ///
+    /// * `hash` - the SHA256 id of the image.
+    /// * `confirm` - mark the given image as 'confirmed'
+    ///
+    /// If `confirm` is `false`, perform a test boot with the given image and revert upon hard reset.
+    ///
+    /// If `confirm` is `true`, boot to the given image and mark it as `confirmed`. If `hash` is omitted,
+    /// confirm the currently running image.
+    ///
+    /// Note that `hash` will not be the same as the SHA256 of the whole firmware image,
+    /// it is the field in the MCUboot TLV section that contains a hash of the data
+    /// which is used for signature verification purposes.
+    ///
+    #[pyo3(signature = (hash=None, confirm=false))]
+    pub fn image_set_state<'py>(
+        &self,
+        py: Python<'py>,
+        hash: Option<Sha256>,
+        confirm: bool,
+    ) -> PyResult<Vec<ImageState>> {
+        let images = self
+            .get_client()?
+            .image_set_state(hash.map(|val| val.0), confirm)
+            .map_err(err_to_pyerr)?;
+
+        Ok(images
+            .into_iter()
+            .map(|val| ImageState::from_response(py, val))
+            .collect())
+    }
+
     /// Upload a firmware image to an image slot.
     ///
     /// ### Arguments

@@ -11,9 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add Python/Rust library commands:
   - `image_upload`
+  - `image_set_state`
 - Add CLI commands:
   - `image`
     - `upload`
+    - `set-state`
 - Refactor cli color output, remove `termcolor` dependency
 
 ### Fixes

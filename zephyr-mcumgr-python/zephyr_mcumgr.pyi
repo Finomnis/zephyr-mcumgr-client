@@ -250,6 +250,24 @@ class MCUmgrClient:
         r"""
         Obtain a list of images with their current state.
         """
+    def image_set_state(self, hash: typing.Optional[builtins.str | builtins.bytes] = None, confirm: builtins.bool = False) -> 'builtins.list[ImageState]':
+        r"""
+        Modify the current image state and return the new state
+        
+        ### Arguments
+        
+        * `hash` - the SHA256 id of the image.
+        * `confirm` - mark the given image as 'confirmed'
+        
+        If `confirm` is `false`, perform a test boot with the given image and revert upon hard reset.
+        
+        If `confirm` is `true`, boot to the given image and mark it as `confirmed`. If `hash` is omitted,
+        confirm the currently running image.
+        
+        Note that `hash` will not be the same as the SHA256 of the whole firmware image,
+        it is the field in the MCUboot TLV section that contains a hash of the data
+        which is used for signature verification purposes.
+        """
     def image_upload(self, data: bytes, image: typing.Optional[builtins.int] = None, checksum: typing.Optional[builtins.str | builtins.bytes] = None, upgrade_only: builtins.bool = False, progress: typing.Optional[collections.abc.Callable[[builtins.int, builtins.int], None]] = None) -> None:
         r"""
         Upload a firmware image to an image slot.
