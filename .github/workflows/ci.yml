@@ -11,7 +11,7 @@ name: CI
 jobs:
   test:
     name: Build and Test
-    needs: [lints, docs]
+    # needs: [lints, docs]
     env:
       RUSTFLAGS: "-D warnings"
     strategy:
