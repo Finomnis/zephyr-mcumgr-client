@@ -52,15 +52,22 @@ pub enum FirmwareUpdateError {
 /// Configurable parameters for [`MCUmgrClient::firmware_update`].
 #[derive(Default)]
 pub struct FirmwareUpdateParams {
-    /// The bootloader type.
+    /// Default: `None`
     ///
+    /// The bootloader type.
     /// Auto-detect bootloader if `None`.
     pub bootloader_type: Option<BootloaderType>,
-    /// Do not reboot device after the update
+    /// Default: `false`
+    ///
+    /// Do not reboot device after the update.
     pub skip_reboot: bool,
-    /// Skip test boot and confirm directly
+    /// Default: `false`
+    ///
+    /// Skip test boot and confirm directly.
     pub force_confirm: bool,
-    /// Prevent firmware downgrades
+    /// Default: `false`
+    ///
+    /// Prevent firmware downgrades.
     pub upgrade_only: bool,
 }
 
