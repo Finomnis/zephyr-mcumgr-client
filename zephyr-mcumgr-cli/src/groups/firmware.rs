@@ -74,7 +74,7 @@ impl<'a> FirmwareUpgradeProgressHandler<'a> {
     fn update(&mut self, msg: &str, progress: Option<(u64, u64)>) -> bool {
         if msg != self.previous_message {
             self.previous_message = msg.to_string();
-            log::info!("{msg}")
+            self.multiprogress.println(msg).ok();
         }
 
         if let Some((current, total)) = progress {
@@ -162,6 +162,10 @@ pub fn run(
                     Some(&mut move |msg, progress| progress_handler.update(msg, progress)),
                 )
             }?;
+
+            multiprogress
+                .println("Success. Device should reboot with new firmware.")
+                .ok();
         }
     }
 

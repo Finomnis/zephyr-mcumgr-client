@@ -79,6 +79,8 @@ pub struct FirmwareUpdateParams {
 ///
 pub type FirmwareUpdateProgressCallback<'a> = dyn FnMut(&str, Option<(u64, u64)>) -> bool + 'a;
 
+const SHOWN_HASH_DIGITS: usize = 4;
+
 /// High level firmware update routine
 ///
 /// # Arguments
@@ -108,7 +110,7 @@ pub fn firmware_update(
     let bootloader_type = if let Some(bootloader_type) = params.bootloader_type {
         bootloader_type
     } else {
-        progress("Detect bootloader ...".into(), None)?;
+        progress("Detecting bootloader ...".into(), None)?;
 
         let bootloader_type = client
             .os_bootloader_info()
@@ -121,31 +123,57 @@ pub fn firmware_update(
         bootloader_type
     };
 
-    progress("Parse firmware image ...".into(), None)?;
-    let image_id_hash = match bootloader_type {
-        BootloaderType::McuBoot => {
-            let info = mcuboot::get_image_info(std::io::Cursor::new(firmware))?;
-            progress(format!("Image version: {}", info.version).into(), None)?;
-            info.hash
-        }
-    };
-
-    progress("Query device state ...".into(), None)?;
+    progress("Querying device state ...".into(), None)?;
     let image_state = client
         .image_get_state()
         .map_err(FirmwareUpdateError::GetStateFailed)?;
-    // Check if the firmware we want to install is already active on the device
-    if image_state
+
+    progress("Parsing firmware image ...".into(), None)?;
+    let (image_version, image_id_hash) = match bootloader_type {
+        BootloaderType::McuBoot => {
+            let info = mcuboot::get_image_info(std::io::Cursor::new(firmware))?;
+            (info.version, info.hash)
+        }
+    };
+
+    let new_image_string = format!(
+        "{}-{}",
+        image_version,
+        hex::encode(&image_id_hash[..SHOWN_HASH_DIGITS])
+    );
+
+    let active_image = image_state
         .iter()
-        .any(|img| img.hash == Some(image_id_hash) && img.active)
-    {
+        .find(|img| img.image == 0 && img.slot == 0);
+
+    let active_image_string = if let Some(active_image) = &active_image {
+        if let Some(active_hash) = active_image.hash {
+            format!(
+                "{}-{}",
+                active_image.version,
+                hex::encode(&active_hash[..SHOWN_HASH_DIGITS]),
+            )
+        } else {
+            active_image.version.clone()
+        }
+    } else {
+        "Empty".to_string()
+    };
+
+    progress(
+        format!("Update: {} -> {}", active_image_string, new_image_string).into(),
+        None,
+    )
+    .ok();
+
+    if active_image.and_then(|img| img.hash) == Some(image_id_hash) {
         return Err(FirmwareUpdateError::AlreadyInstalled);
     }
 
-    progress("Upload new firmware ...".into(), None)?;
+    progress("Uploading new firmware ...".into(), None)?;
     let upload_progress_cb: Option<&mut dyn FnMut(u64, u64) -> bool> = if has_progress {
         Some(&mut |current, total| {
-            if let Err(e) = progress("Upload new firmware ...".into(), Some((current, total))) {
+            if let Err(e) = progress("Uploading new firmware ...".into(), Some((current, total))) {
                 log::error!("{e:?}");
                 false
             } else {
@@ -163,7 +191,7 @@ pub fn firmware_update(
         upload_progress_cb,
     )?;
 
-    progress("Activate new firmware ...".into(), None)?;
+    progress("Activating new firmware ...".into(), None)?;
     let set_state_result = client.image_set_state(Some(image_id_hash), params.force_confirm);
     if let Err(set_state_error) = set_state_result {
         let mut image_already_active = false;
@@ -174,7 +202,7 @@ pub fn firmware_update(
         // Sanity check that the image is on the first position already to avoid false
         // positives of this exception.
         if bootloader_type == BootloaderType::McuBoot && set_state_error.command_not_supported() {
-            progress("Query device state ...".into(), None)?;
+            progress("Querying device state ...".into(), None)?;
             let image_state = client
                 .image_get_state()
                 .map_err(FirmwareUpdateError::GetStateFailed)?;
@@ -191,7 +219,7 @@ pub fn firmware_update(
         }
     }
 
-    progress("Trigger device reboot ...".into(), None)?;
+    progress("Triggering device reboot ...".into(), None)?;
     client
         .os_system_reset(false, None)
         .map_err(FirmwareUpdateError::RebootFailed)?;
