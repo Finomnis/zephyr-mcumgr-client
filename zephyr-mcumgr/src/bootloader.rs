@@ -44,6 +44,35 @@ impl serde::Serialize for BootloaderInfo {
     }
 }
 
+/// Supported bootloader/image types
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum BootloaderType {
+    /// McuBoot Bootloader
+    McuBoot,
+}
+
+impl std::fmt::Display for BootloaderType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let name = match self {
+            BootloaderType::McuBoot => "MCUboot",
+        };
+
+        write!(f, "{name}",)
+    }
+}
+
+impl BootloaderInfo {
+    /// Extract the bootloader type
+    ///
+    /// If the type is unknown, returns the name of the bootloader `Err` value.
+    pub fn get_bootloader_type(&self) -> Result<BootloaderType, String> {
+        match self {
+            BootloaderInfo::MCUboot { .. } => Ok(BootloaderType::McuBoot),
+            BootloaderInfo::Unknown { name } => Err(name.clone()),
+        }
+    }
+}
+
 /// MCUboot modes
 ///
 /// See [`enum mcuboot_mode`](https://github.com/mcu-tools/mcuboot/blob/main/boot/bootutil/include/bootutil/boot_status.h).
