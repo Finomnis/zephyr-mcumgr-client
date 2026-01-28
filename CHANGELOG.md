@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.7.1] - xxxx-xx-xx
 
+## Changes
+
+- Increase default timeout to `5000 ms`.
+
 ## Fixes
 
 - Firmware upload to MCUboot recovery mode failed with `MGMT_ERR_EOK`

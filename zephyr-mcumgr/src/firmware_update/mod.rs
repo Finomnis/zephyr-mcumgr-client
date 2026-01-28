@@ -3,7 +3,10 @@ use std::borrow::Cow;
 use miette::Diagnostic;
 use thiserror::Error;
 
-use crate::{MCUmgrClient, bootloader::BootloaderType, connection::ExecuteError, mcuboot};
+use crate::{
+    MCUmgrClient, bootloader::BootloaderType, client::ImageUploadError, connection::ExecuteError,
+    mcuboot,
+};
 
 /// Possible errors that can happen during firmware update.
 #[derive(Error, Debug, Diagnostic)]
@@ -12,18 +15,26 @@ pub enum FirmwareUpdateError {
     #[error("Progress callback returned an error")]
     #[diagnostic(code(zephyr_mcumgr::firmware_update::progress_cb_error))]
     ProgressCallbackError,
-    /// An error occurred while trying to detect the bootloader
+    /// An error occurred while trying to detect the bootloader.
     #[error("Failed to detect bootloader")]
     #[diagnostic(code(zephyr_mcumgr::firmware_update::detect_bootloader))]
     BootloaderDetectionFailed(#[source] ExecuteError),
-    /// The device contains a bootloader that is not supported
+    /// The device contains a bootloader that is not supported.
     #[error("Bootloader '{0}' not supported")]
     #[diagnostic(code(zephyr_mcumgr::firmware_update::unknown_bootloader))]
     BootloaderNotSupported(String),
-    /// The device contains a bootloader that is not supported
+    /// Failed to parse the firmware image as MCUboot firmware.
     #[error("Firmare is not a valid MCUboot image")]
     #[diagnostic(code(zephyr_mcumgr::firmware_update::mcuboot_image))]
     InvalidMcuBootFirmwareImage(#[from] mcuboot::ImageParseError),
+    /// Fetching the image state returned an error.
+    #[error("Failed to fetch image state from device")]
+    #[diagnostic(code(zephyr_mcumgr::firmware_update::get_image_state))]
+    GetStateFailed(#[source] ExecuteError),
+    /// Uploading the firmware image returned an error.
+    #[error("Failed to upload firmware image to device")]
+    #[diagnostic(code(zephyr_mcumgr::firmware_update::image_upload))]
+    ImageUploadFailed(#[from] ImageUploadError),
 }
 
 /// Configurable parameters for [`firmware_update`].
@@ -37,6 +48,10 @@ pub struct FirmwareUpdateParams {
     pub skip_reboot: bool,
     /// Skip test boot and confirm directly
     pub force_confirm: bool,
+    /// Prevent firmware downgrades
+    pub upgrade_only: bool,
+    /// SHA-256 checksum of the image file
+    pub checksum: Option<[u8; 32]>,
 }
 
 /// The progress callback type of [`firmware_update`].
@@ -68,6 +83,7 @@ pub fn firmware_update(
 ) -> Result<(), FirmwareUpdateError> {
     let firmware = firmware.as_ref();
 
+    let has_progress = progress.is_some();
     let mut progress = |msg: Cow<str>, prog| {
         if let Some(progress) = &mut progress {
             if !progress(msg.as_ref(), prog) {
@@ -88,7 +104,7 @@ pub fn firmware_update(
             .get_bootloader_type()
             .map_err(FirmwareUpdateError::BootloaderNotSupported)?;
 
-        progress(format!("Found bootloader '{bootloader_type}'").into(), None)?;
+        progress(format!("Found bootloader: {bootloader_type}").into(), None)?;
 
         bootloader_type
     };
@@ -101,6 +117,33 @@ pub fn firmware_update(
             info.hash
         }
     };
+
+    progress("Uploading new firmware ...".into(), None)?;
+
+    let upload_progress_cb: Option<&mut dyn FnMut(u64, u64) -> bool> = if has_progress {
+        Some(&mut |current, total| {
+            if let Err(e) = progress("Uploading new firmware ...".into(), Some((current, total))) {
+                log::error!("{e:?}");
+                false
+            } else {
+                true
+            }
+        })
+    } else {
+        None
+    };
+    client.image_upload(
+        firmware,
+        None,
+        params.checksum,
+        params.upgrade_only,
+        upload_progress_cb,
+    )?;
+
+    progress("Query device state ...".into(), None)?;
+    let image_state = client
+        .image_get_state()
+        .map_err(FirmwareUpdateError::GetStateFailed)?;
 
     Ok(())
 }

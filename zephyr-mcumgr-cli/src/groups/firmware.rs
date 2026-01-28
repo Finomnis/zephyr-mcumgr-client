@@ -7,7 +7,7 @@ use zephyr_mcumgr::firmware_update::{FirmwareUpdateParams, firmware_update};
 
 use crate::{
     args::CommonArgs, client::Client, errors::CliError, file_read_write::read_input_file,
-    formatting::structured_print,
+    formatting::structured_print, groups::parse_sha256,
 };
 
 #[derive(Copy, Clone, Debug, ValueEnum)]
@@ -48,6 +48,12 @@ pub enum FirmwareCommand {
         /// Skip test boot and confirm directly
         #[arg(long)]
         force_confirm: bool,
+        /// Prevent firmware downgrades
+        #[arg(long)]
+        upgrade_only: bool,
+        /// SHA-256 checksum of the image file
+        #[arg(long, value_parser=parse_sha256)]
+        checksum: Option<[u8; 32]>,
     },
 }
 
@@ -130,6 +136,8 @@ pub fn run(
             bootloader,
             skip_reboot,
             force_confirm,
+            upgrade_only,
+            checksum,
         } => {
             let (firmware, _source_filename) = read_input_file(&firmware_file)?;
 
@@ -139,6 +147,8 @@ pub fn run(
                 bootloader_type: bootloader.map(Into::into),
                 skip_reboot,
                 force_confirm,
+                upgrade_only,
+                checksum,
             };
 
             if args.quiet {
