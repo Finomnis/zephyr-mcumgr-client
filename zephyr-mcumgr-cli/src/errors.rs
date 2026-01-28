@@ -3,9 +3,10 @@ use thiserror::Error;
 
 use zephyr_mcumgr::{
     Errno,
-    client::{FileDownloadError, FileUploadError, ImageUploadError, UsbSerialError},
+    client::{
+        FileDownloadError, FileUploadError, FirmwareUpdateError, ImageUploadError, UsbSerialError,
+    },
     connection::ExecuteError,
-    firmware_update::FirmwareUpdateError,
     mcuboot::ImageParseError,
 };
 

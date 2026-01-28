@@ -8,7 +8,7 @@ use crate::{
     mcuboot,
 };
 
-/// Possible errors that can happen during firmware update.
+/// Possible error values of [`MCUmgrClient::firmware_update`].
 #[derive(Error, Debug, Diagnostic)]
 pub enum FirmwareUpdateError {
     /// The progress callback returned an error.
@@ -49,7 +49,7 @@ pub enum FirmwareUpdateError {
     AlreadyInstalled,
 }
 
-/// Configurable parameters for [`firmware_update`].
+/// Configurable parameters for [`MCUmgrClient::firmware_update`].
 #[derive(Default)]
 pub struct FirmwareUpdateParams {
     /// The bootloader type.
@@ -62,11 +62,9 @@ pub struct FirmwareUpdateParams {
     pub force_confirm: bool,
     /// Prevent firmware downgrades
     pub upgrade_only: bool,
-    /// SHA-256 checksum of the image file
-    pub checksum: Option<[u8; 32]>,
 }
 
-/// The progress callback type of [`firmware_update`].
+/// The progress callback type of [`MCUmgrClient::firmware_update`].
 ///
 /// # Arguments
 ///
@@ -86,12 +84,15 @@ const SHOWN_HASH_DIGITS: usize = 4;
 /// # Arguments
 ///
 /// * `client` - The MCUmgr client.
+/// * `firmware` - The firmware image data.
+/// * `checksum` - SHA256 of the firmware image. Optional.
 /// * `params` - Configurable parameters.
 /// * `progress` - A callback that receives progress updates.
 ///
-pub fn firmware_update(
+pub(crate) fn firmware_update(
     client: &MCUmgrClient,
     firmware: impl AsRef<[u8]>,
+    checksum: Option<[u8; 32]>,
     params: FirmwareUpdateParams,
     mut progress: Option<&mut FirmwareUpdateProgressCallback>,
 ) -> Result<(), FirmwareUpdateError> {
@@ -178,7 +179,7 @@ pub fn firmware_update(
         .image_upload(
             firmware,
             None,
-            params.checksum,
+            checksum,
             params.upgrade_only,
             has_progress.then_some(&mut upload_progress_cb),
         )

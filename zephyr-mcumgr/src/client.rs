@@ -1,3 +1,10 @@
+/// High level firmware update routine
+mod firmware_update;
+
+pub use firmware_update::{
+    FirmwareUpdateError, FirmwareUpdateParams, FirmwareUpdateProgressCallback,
+};
+
 use std::{
     collections::HashMap,
     io::{self, Read, Write},
@@ -392,6 +399,25 @@ impl MCUmgrClient {
                 crate::transport::ReceiveError::UnexpectedResponse,
             ))
         }
+    }
+
+    /// High level firmware update routine.
+    ///
+    /// # Arguments
+    ///
+    /// * `firmware` - The firmware image data.
+    /// * `checksum` - SHA256 of the firmware image. Optional.
+    /// * `params` - Configurable parameters.
+    /// * `progress` - A callback that receives progress updates.
+    ///
+    pub fn firmware_update(
+        &self,
+        firmware: impl AsRef<[u8]>,
+        checksum: Option<[u8; 32]>,
+        params: FirmwareUpdateParams,
+        progress: Option<&mut FirmwareUpdateProgressCallback>,
+    ) -> Result<(), FirmwareUpdateError> {
+        firmware_update::firmware_update(self, firmware, checksum, params, progress)
     }
 
     /// Sends a message to the device and expects the same message back as response.

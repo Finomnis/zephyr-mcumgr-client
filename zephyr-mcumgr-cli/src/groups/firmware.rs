@@ -1,6 +1,6 @@
 use clap::ValueEnum;
 use indicatif::{MultiProgress, ProgressBar, ProgressFinish, ProgressStyle};
-use zephyr_mcumgr::firmware_update::{FirmwareUpdateParams, firmware_update};
+use zephyr_mcumgr::client::FirmwareUpdateParams;
 
 use crate::{
     args::CommonArgs, client::Client, errors::CliError, file_read_write::read_input_file,
@@ -145,16 +145,15 @@ pub fn run(
                 skip_reboot,
                 force_confirm,
                 upgrade_only,
-                checksum,
             };
 
             if args.quiet {
-                firmware_update(client, firmware, params, None)
+                client.firmware_update(firmware, checksum, params, None)
             } else {
                 let mut progress_handler = FirmwareUpgradeProgressHandler::new(multiprogress);
-                firmware_update(
-                    client,
+                client.firmware_update(
                     firmware,
+                    checksum,
                     params,
                     Some(&mut move |msg, progress| progress_handler.update(msg, progress)),
                 )

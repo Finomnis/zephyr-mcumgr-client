@@ -64,7 +64,7 @@ impl std::fmt::Display for BootloaderType {
 impl BootloaderInfo {
     /// Extract the bootloader type
     ///
-    /// If the type is unknown, returns the name of the bootloader as error.
+    /// If the type is unknown, returns the name of the bootloader `Err` value.
     pub fn get_bootloader_type(&self) -> Result<BootloaderType, String> {
         match self {
             BootloaderInfo::MCUboot { .. } => Ok(BootloaderType::McuBoot),
