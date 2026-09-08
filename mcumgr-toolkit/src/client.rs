@@ -464,7 +464,7 @@ impl MCUmgrClient {
         let mut devices = HashMap::new();
 
         let device = runtime
-            .load_devices(async |previously_known_devices| {
+            .load_known_mcumgr_peripherals(async |previously_known_devices| {
                 // log::info!("{:#?}", previously_known_devices);
 
                 // Attempt to find the device we search for
@@ -488,11 +488,7 @@ impl MCUmgrClient {
                         #[allow(irrefutable_let_patterns)]
                         #[allow(clippy::unnecessary_fallible_conversions)]
                         if let Ok(current_identifier) = BleIdentifier::try_from(&potential_device) {
-                            if let Ok(Some(properties)) = potential_device.properties().await
-                                && properties
-                                    .services
-                                    .contains(&crate::transport::ble::SMP_UUID)
-                            {
+                            if let Ok(Some(properties)) = potential_device.properties().await {
                                 devices
                                     .entry(potential_device.id())
                                     .insert_entry(BleDeviceInfo {
