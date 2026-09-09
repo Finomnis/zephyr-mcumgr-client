@@ -8,8 +8,8 @@ use std::{pin::Pin, time::Duration};
 
 use btleplug::{
     api::{
-        Central, CentralEvent, Characteristic, Manager, Peripheral as _, ScanFilter,
-        ValueNotification,
+        Central, CentralEvent, Characteristic, Manager, Peripheral as _,
+        RetrievePeripheralsOptions, ScanFilter, ValueNotification,
     },
     platform::{Adapter, Peripheral},
 };
@@ -61,6 +61,26 @@ impl BleRuntime {
         })?;
 
         Ok(Self { runtime, adapter })
+    }
+
+    /// Execute the given function after loading known devices from OS
+    pub fn load_known_mcumgr_peripherals<F, R>(&mut self, f: F) -> Result<R, BleRuntimeError>
+    where
+        F: AsyncFnOnce(Vec<Peripheral>) -> R,
+    {
+        let future = async {
+            let adapters = self
+                .adapter
+                .retrieve_peripherals(RetrievePeripheralsOptions {
+                    identifiers: None,
+                    services: Some(vec![SMP_UUID]),
+                })
+                .await?;
+
+            Ok(f(adapters).await)
+        };
+
+        self.block_on(future)
     }
 
     /// Execute the given function while scanning for devices
